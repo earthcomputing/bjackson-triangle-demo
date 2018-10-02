@@ -17,4 +17,6 @@ short term :
     demo_server_c.js
     do_demo
 
+Node.js build:
 
+    npm install body-parser express socket.io
