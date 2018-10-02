@@ -11,12 +11,24 @@ short term :
 
 /Users/bjackson/earth-computing/git-projects/NALDD-github/entl_test
 
-    README.txt
+    README.txt - renamed to README-Ubuntu
     demo_cell.html
-    demo_client.c
+    demo_client.c - renamed to adapter.c
     demo_server_c.js
     do_demo
+    cJSON.c
 
 Node.js build:
 
     npm install body-parser express socket.io
+
+New files:
+
+    README.md
+    activate-demo.sh - remote display setup script
+    Makefile - build adapter (generic)
+    Makefile.linux - build adapter (linux)
+    images - background images (Alice, Bob, Carol)
+    package.json - build demo_server_c.js
+    post-frame.pl - test script for POST API
+
