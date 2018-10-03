@@ -4,6 +4,8 @@ set alice = 172.16.1.67
 set bob = 172.16.1.40
 set carol = 172.16.1.105
 
+set demo_dir = /home/demouser/earthcomputing/NALDD/entl_test
+
 cat > /tmp/triangle-demo.html << _eos_
 <frameset cols="33%, 33%, 33%">
   <frame src="http://${alice}:3000/?machineName=Alice&color=yellow" name="alice">
@@ -13,9 +15,9 @@ cat > /tmp/triangle-demo.html << _eos_
 </frameset>
 _eos_
 
-echo 'ssh demouser@'$alice' "cd /home/demouser/earthcomputing/NALDD/entl_test; ./do_demo"' > /tmp/alice.command
-echo 'ssh demouser@'$bob' "cd /home/demouser/earthcomputing/NALDD/entl_test; ./do_demo"' > /tmp/bob.command
-echo 'ssh demouser@'$carol' "cd /home/demouser/earthcomputing/NALDD/entl_test; ./do_demo"' > /tmp/carol.command
+echo 'ssh demouser@'$alice' "cd ${demo_dir}; ./launch-eccf-server.sh Alice"' > /tmp/alice.command
+echo 'ssh demouser@'$bob' "cd ${demo_dir}; ./launch-eccf-server.sh Bob"' > /tmp/bob.command
+echo 'ssh demouser@'$carol' "cd ${demo_dir}; ./launch-eccf-server.sh Carol"' > /tmp/carol.command
 
 foreach one ( alice bob carol )
     echo $one

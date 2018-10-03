@@ -2,6 +2,8 @@
 const s_port = 3000;
 const c_port = 1337;
 
+const cell_ui = cell-ui.html;
+
 var last_ait = {};
 var json_data = {};
 var connected = 0;
@@ -61,7 +63,7 @@ app.get('/port/:port_id', function (req, res) {
 });
 
 app.get('/', function (req, res) {
-    res.sendFile(__dirname + '/demo_cell.html');
+    res.sendFile(__dirname + '/' + cell_ui);
 });
 
 // aitMessage { port message }
@@ -117,7 +119,7 @@ var client = net.createServer(function (socket) {
                         if (obj.machineName) {
                             json_data[obj.machineName] = d;
                             if (connected) {
-// I/O to spinner (demo_cell.html)
+// I/O to spinner
                                 io.emit('earth-update', d);
                                 console.log('earth-update ' + d);
                             }

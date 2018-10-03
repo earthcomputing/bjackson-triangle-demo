@@ -1,3 +1,6 @@
-nodejs demo_server_c.js &
+#!/bin/sh
+# usage: $0 <machineName>
+
+node eccf-server.js &
 sleep 3
-./demo_client demo
+./adapter $1

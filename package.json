@@ -1,8 +1,8 @@
 {
-  "name": "triangle-demo",
+  "name": "eccf-server",
   "version": "1.0.0",
   "description": "",
-  "main": "demo_server_c.js",
+  "main": "eccf-server.js",
   "dependencies": {
     "body-parser": "^1.18.3",
     "express": "^4.16.3",
