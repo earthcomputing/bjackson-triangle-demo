@@ -1,0 +1,11 @@
+digraph G {
+    rankdir=LR
+
+    Alice:p2 -> Bob:p1 [label="link1" color=red]
+    Bob:p3 -> Carol:p2 [label="link4" color=green]
+    Carol:p1 -> Alice:p3 [label="link5" color=blue]
+
+    Alice:p3 -> Carol:p1 [label="link2" color=cyan]
+    Carol:p2 -> Bob:p3 [label="link6" color=magenta]
+    Bob:p1 -> Alice:p2 [label="link3" color=yellow]
+}
