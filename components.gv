@@ -1,0 +1,8 @@
+digraph G {
+    rankdir=LR
+
+    e1000e -> adapter [label="IOCTL"]
+    adapter -> server [label="tcp/JSON"]
+    server -> cell [label="http/socket.io/JSON"]
+    post -> server [label="http/REST/JSON"]
+}
