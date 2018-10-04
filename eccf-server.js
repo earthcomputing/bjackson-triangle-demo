@@ -2,7 +2,7 @@
 const s_port = 3000;
 const c_port = 1337;
 
-const cell_ui = cell-ui.html;
+const cell_ui = 'cell-ui.html';
 
 var last_ait = {};
 var json_data = {};
