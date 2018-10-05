@@ -47,4 +47,6 @@ I'd rather not include those things in this git repo, at least for now.
     3. http://localhost:3000/ports
     4. http://localhost:3000/port/enp6s0
     5. post-frame.pl
+    6. http://localhost:3000/git-version
+    7. http://localhost:3000/git-config
 

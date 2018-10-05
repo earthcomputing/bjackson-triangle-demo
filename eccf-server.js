@@ -62,6 +62,16 @@ app.get('/port/:port_id', function (req, res) {
     res.send('GET port ...' + JSON.stringify(req.params) + message);
 });
 
+app.get('/git-version', function (req, res) {
+    res.set('Content-Type', 'text/plain');
+    res.sendFile(__dirname + '/.git/refs/heads/master');
+});
+
+app.get('/git-config', function (req, res) {
+    res.set('Content-Type', 'text/plain');
+    res.sendFile(__dirname + '/.git/config');
+});
+
 app.get('/', function (req, res) {
     res.sendFile(__dirname + '/' + cell_ui);
 });
