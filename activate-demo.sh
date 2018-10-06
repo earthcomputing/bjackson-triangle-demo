@@ -16,12 +16,12 @@ cat > /tmp/triangle-demo.html << _eos_
 </frameset>
 _eos_
 
-echo 'ssh demouser@'$alice' "cd ${demo_dir}; ./launch-eccf-server.sh Alice"' > /tmp/alice.command
-echo 'ssh demouser@'$bob' "cd ${demo_dir}; ./launch-eccf-server.sh Bob"' > /tmp/bob.command
-echo 'ssh demouser@'$carol' "cd ${demo_dir}; ./launch-eccf-server.sh Carol"' > /tmp/carol.command
+echo 'ssh demouser@'${alice}' "cd '${demo_dir}'; ./launch-eccf-server.sh Alice"' > /tmp/alice.command
+echo 'ssh demouser@'${bob}' "cd '${demo_dir}'; ./launch-eccf-server.sh Bob"' > /tmp/bob.command
+echo 'ssh demouser@'${carol}' "cd '${demo_dir}'; ./launch-eccf-server.sh Carol"' > /tmp/carol.command
 
 foreach one ( alice bob carol )
-    echo $one
+    echo ${one}
     chmod +x /tmp/${one}.command
     open /tmp/${one}.command
 end
