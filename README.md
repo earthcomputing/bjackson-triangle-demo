@@ -32,21 +32,29 @@ I'd rather not include those things in this git repo, at least for now.
     package.json - build demo_server_c.js
     post-frame.pl - test script for POST API
 
+## install notes:
+
+    cd /home/demouser/earthcomputing
+    git clone https://github.com/earthcomputing/bjackson-triangle-demo.git triangle-demo
+
 ## Adapter build:
 
     make [-f Makefile.linux]
 
 ## Node.js build:
 
+    sudo apt install nodejs
+    sudo apt install npm
     npm install body-parser express socket.io
 
 ## test notes:
 
-    1. start eccf-server
+    1. launch-eccf-server.sh
     2. telnet localhost 1337
     3. http://localhost:3000/ports
     4. http://localhost:3000/port/enp6s0
     5. post-frame.pl
     6. http://localhost:3000/git-version
     7. http://localhost:3000/git-config
+    8. http://localhost:3000/?machineName=Alice&color=yellow
 
