@@ -5,6 +5,7 @@ set bob = 172.16.1.40
 set carol = 172.16.1.105
 
 set demo_dir = /home/demouser/earthcomputing/NALDD/entl_test
+set demo_dir = /home/demouser/earthcomputing/triangle-demo
 
 cat > /tmp/triangle-demo.html << _eos_
 <frameset cols="33%, 33%, 33%">

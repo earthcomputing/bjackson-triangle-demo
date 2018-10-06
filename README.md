@@ -47,6 +47,8 @@ I'd rather not include those things in this git repo, at least for now.
     sudo apt install npm
     npm install body-parser express socket.io
 
+## CPAN update(s):
+
 ## test notes:
 
     1. ./launch-eccf-server.sh [Alice Bob Carol]
