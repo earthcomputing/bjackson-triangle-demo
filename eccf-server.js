@@ -10,7 +10,7 @@ var connected = 0;
 var c_socket;
 
 var config = {
-    "trunc" : 20
+    "trunc" : -30
 };
 
 // npm install body-parser express socket.io
@@ -56,7 +56,7 @@ app.post('/port/:port_id', function (req, res) {
         '\nheaders:', req.headers,
         '\nbody:', req.body
     );
-    if (trunc != 0) { console.log('POST port ... frame:', substr(frame, trunc)); }
+    if (config.trunc != 0) { console.log('POST port ... frame:', frame.substr(config.trunc)); }
     var port = req.params.port_id;
     adapterWrite(port, frame);
     res.send('POST port ...' + JSON.stringify(req.params));
