@@ -106,8 +106,8 @@ app.get('/', function (req, res) {
 
 // aitMessage { port message }
 io.on('connection', function (socket) {
-    var endpoint = socket.id; // socket.remoteAddress + ':' + socket.remotePort;
-    console.log('io connected from', endpoint);
+    var endpoint = socket.handshake.address;
+    console.log('socket.io', s_port, 'connected, session', socket.id, 'from', endpoint);
     connected = 1;
     // sendPacket - send buttom
     socket.on('aitMessage', function (msg) {
@@ -170,7 +170,7 @@ var receiveListener = function (data) {
 var connectionListener = function (socket) {
     c_socket = socket;
     var endpoint = socket.remoteAddress + ':' + socket.remotePort;
-    console.log('Client connected from', endpoint);
+    console.log('net', c_port, 'connected from', endpoint);
     socket.on('data', receiveListener);
 };
 
