@@ -283,21 +283,44 @@ socket.on("earth-update", function(data) {
     processPacket(data);
 });
 
+/*
+cellagent-update: {
+    ait_code: 'TOCK',
+    frame: '7b226d...',
+    msg_id: '9060533230310021231',
+    outbound: '2',
+    pe_id: 'C:1',
+    tree: '0x400074367c704351baf6176ffc4e1b6a'
+}
+*/
 var processCellAgent = (function() {
     var hostname = o.machineName;
     return function(msg) {
-        var host = msg.host;
-        var port = msg.port;
+        console.log('cellagent-update:', hostname, msg);
+        var host = msg.pe_id;
+        var port = msg.outbound;
         var tree = msg.tree;
         var frame = msg.frame;
-        if (hostname != host) return;
-        $('#cellAgentRecv').html('port: ' + port + ' tree: ' + tree + ' frame: ' + frame);
+        var ait_code = msg.ait_code;
+        var msg_id = msg.msg_id;
+        // if (hostname != host) return;
+        var content =
+            ' host: ' + host
+            + ' hostname: ' + hostname
+            + ' msg_id: ' + msg_id
+            + ' ait_code: ' + ait_code
+            + ' tree: ' + tree
+            + ' port: ' + port
+            + ' frame: ' + frame
+        ;
+        $('#cellAgentRecv').html(content);
     };
 })();
 
 // cellagent-update { port tree frame }
 socket.on("cellagent-update", function(data) {
-    data = JSON.parse(data.toString());
+    var hostname = o.machineName;
+    // data = JSON.parse(data.toString());
     processCellAgent(data);
 });
 
