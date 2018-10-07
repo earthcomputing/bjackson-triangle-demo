@@ -53,6 +53,7 @@ I'd rather not include those things in this git repo, at least for now.
 
     http://localhost:3000/?machineName=Alice&color=yellow
     http://localhost:3000/config?trunc=-80
+    http://localhost:3000/config?verbose=true
     http://localhost:3000/git-config
     http://localhost:3000/git-version
     http://localhost:3000/port/enp6s0

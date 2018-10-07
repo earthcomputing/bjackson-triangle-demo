@@ -285,6 +285,7 @@ socket.on("earth-update", function(data) {
 
 /*
 cellagent-update: {
+    nickname: 'Bob',
     ait_code: 'TOCK',
     frame: '7b226d...',
     msg_id: '9060533230310021231',
@@ -294,23 +295,27 @@ cellagent-update: {
 }
 */
 var processCellAgent = (function() {
-    var hostname = o.machineName;
+    var machineName = o.machineName;
     return function(msg) {
-        console.log('cellagent-update:', hostname, msg);
-        var host = msg.pe_id;
+        console.log('cellagent-update:', machineName, msg);
+        var nickname = msg.nickname;
+        if (machineName != nickname) return; // ugh!
+
+        var cell_id = msg.pe_id;
         var port = msg.outbound;
         var tree = msg.tree;
         var frame = msg.frame;
         var ait_code = msg.ait_code;
         var msg_id = msg.msg_id;
-        // if (hostname != host) return;
+
         var content =
-            ' host: ' + host
-            + ' hostname: ' + hostname
-            + ' msg_id: ' + msg_id
-            + ' ait_code: ' + ait_code
-            + ' tree: ' + tree
-            + ' port: ' + port
+            ' machineName: ' + machineName + '<br/>'
+            + ' nickname: ' + nickname + '<br/>'
+            + ' cell_id: ' + cell_id + '<br/>'
+            + ' port: ' + port + '<br/>'
+            + ' ait_code: ' + ait_code + '<br/>'
+            + ' tree: ' + tree + '<br/>'
+            + ' msg_id: ' + msg_id + '<br/>'
             + ' frame: ' + frame
         ;
         $('#cellAgentRecv').html(content);

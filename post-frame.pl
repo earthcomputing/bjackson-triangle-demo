@@ -28,7 +28,8 @@ $|++; # autoflush
 
 my $cfile = 'blueprint-triangle.json';
 my $port_map;
-my $host_map;
+my $cell_map;
+my $nicknames;
 
 if ( $#ARGV < 0 ) {
     print('usage: [-config='.$cfile.'] frames.json ...', $endl);
@@ -53,15 +54,17 @@ sub process_file {
         my $json_text = $_;
         my $o = decode_json($json_text);
 
-        my $host = $o->{pe_id};
+        my $cell_id = $o->{pe_id};
         my $port = $o->{outbound};
+        my $nick = $nicknames->{$cell_id};
+        $o->{nickname} = $nick;
         print(join(' ', '   ', 'phy enqueue',
-            # $host, $port,
+            $o->{nickname}, $cell_id, $port,
             $o->{ait_code}, $o->{tree}, 'msg_id='.$o->{msg_id},
             substr($o->{frame}, 0, 10).'...',
             '; '
         ));
-        my $url = api($host, $port);
+        my $url = api($cell_id, $port);
         print($url, ' ');
         my $response = $ua->post_form($url, $o);
         print('status=', $response->{'status'}, $endl);
@@ -73,12 +76,13 @@ sub read_config {
     my @blueprint = inhale($cfile);
     my $config = decode_json(join($endl, @blueprint));
     $port_map = $config->{'ports'};
-    $host_map = $config->{'hosts'};
+    $cell_map = $config->{'cells'};
+    $nicknames = $config->{'nicknames'};
 }
 
 sub api {
-    my ($host, $port) = @_;
-    my $ip_addr = $host_map->{$host};
+    my ($cell_id, $port) = @_;
+    my $ip_addr = $cell_map->{$cell_id};
     my $port_id = $port_map->[$port];
     my $url = 'http://'.$ip_addr.':3000/port/'.$port_id;
     return $url;
