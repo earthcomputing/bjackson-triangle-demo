@@ -145,7 +145,11 @@ $().ready(function() {
     inp.css('border-radius', '10px');
     inp.css('margin-left', '100px');
     inp.css('padding-left', '10px');
-    $('body').append('<br/>').append('<br/>').append('<br/>').append('<br/>').append(inp);
+    $('body').append('<br/>').append('CellAgent outbound:').append(inp);
+
+    $('body').append('<br/>').append('CellAgent inbound:').append(
+        $('<div>').attr({ id: "cellAgentRecv", class: "med" }).html("ABCD")
+    );
 
     attachSpinners(); // should only do this once
 });
@@ -277,6 +281,24 @@ var socket = io();
 socket.on("earth-update", function(data) {
     data = JSON.parse(data.toString());
     processPacket(data);
+});
+
+var processCellAgent = (function() {
+    var hostname = o.machineName;
+    return function(msg) {
+        var host = msg.host;
+        var port = msg.port;
+        var tree = msg.tree;
+        var frame = msg.frame;
+        if (hostname != host) return;
+        $('#cellAgentRecv').html('port: ' + port + ' tree: ' + tree + ' frame: ' + frame);
+    };
+})();
+
+// cellagent-update { port tree frame }
+socket.on("cellagent-update", function(data) {
+    data = JSON.parse(data.toString());
+    processCellAgent(data);
 });
 
 var deviceName2port = { // zzzz how get port ids for a cell
