@@ -9,6 +9,10 @@ var json_data = {};
 var connected = 0;
 var c_socket;
 
+var config = {
+    "trunc" : 20
+};
+
 // npm install body-parser express socket.io
 var bodyParser = require('body-parser');
 var express = require('express');
@@ -22,7 +26,12 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/', express.static(path.join(__dirname, '/')));
 
-// HTTP request methods: get, head, post, put, delete, trace, options, connect, patch
+app.get('/config', function (req, res) {
+    var query = req.query;
+    for (var i in query) config[i] = query[i];
+    console.log('config:', req.method, req.url, req.query, config);
+    res.send(JSON.stringify(config));
+});
 
 // http://localhost:3000/ports
 app.get('/ports', function (req, res) {
@@ -42,17 +51,19 @@ app.all('/port/:port_id', function (req, res, next) {
 
 app.post('/port/:port_id', function (req, res) {
     var frame = req.body.frame;
+    req.body.frame = null;
     console.log('POST port ...',
         '\nheaders:', req.headers,
-        '\nbody:', req.body,
-        '\nframe:', frame
+        '\nbody:', req.body
     );
-    last_ait[req.params.port_id] = frame;
-    adapterWrite(req.params.port_id, frame);
-    res.send('POST port ...' + JSON.stringify(req.params) + frame);
+    if (trunc != 0) { console.log('POST port ... frame:', substr(frame, trunc)); }
+    var port = req.params.port_id;
+    adapterWrite(port, frame);
+    res.send('POST port ...' + JSON.stringify(req.params));
 });
 
 function adapterWrite(port, message) {
+    last_ait[port] = message;
     c_socket.write('{ \"port\": \"' + port + '\", \"message\":\"' + message + '\" }')
 }
 
@@ -82,11 +93,10 @@ io.on('connection', function (socket) {
     connected = 1;
     // sendPacket - send buttom
     socket.on('aitMessage', function (msg) {
-        var message = msg.message;
         var port = msg.port;
+        var message = msg.message;
         console.log('AIT ' + port + ' ' + message);
-        last_ait[port] = message;
-        c_socket.write('{ \"port\": \"' + port + '\", \"message\":\"' + message + '\" }')
+        adapterWrite(port, message);
     });
 });
 
@@ -121,23 +131,23 @@ var client = net.createServer(function (socket) {
         var jd = data.split("\n");
         for (var i = 0, len = jd.length; i < len; i++) {
             var d = jd[i];
-            if (!isBlank(d)) {
-                try {
-                    var obj = JSON.parse(d);
-                    if (obj) {
-                        console.log( "entlCount:", obj.entlCount);
-                        if (obj.machineName) {
-                            json_data[obj.machineName] = d;
-                            if (connected) {
-// I/O to spinner
-                                io.emit('earth-update', d);
-                                console.log('earth-update ' + d);
-                            }
-                        }
-                    }
-                } catch(e) {
-                    console.log('error:' + e);
-                }
+            if (isBlank(d)) continue;
+
+            try {
+                var obj = JSON.parse(d);
+                if (!obj) continue;
+
+                console.log( "entlCount:", obj.entlCount);
+
+                if (!obj.machineName) continue;
+                json_data[obj.machineName] = d;
+
+                // I/O to spinner
+                if (!connected) continue;
+                io.emit('earth-update', d);
+                console.log('earth-update ' + d);
+            } catch(e) {
+                console.log('error:' + e);
             }
         }
    });
