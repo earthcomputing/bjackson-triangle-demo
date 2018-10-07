@@ -27,12 +27,13 @@ $|++; # autoflush
 # --
 
 my $cfile = 'blueprint-triangle.json';
+my $delay = 0;
 my $port_map;
 my $cell_map;
 my $nicknames;
 
 if ( $#ARGV < 0 ) {
-    print('usage: [-config='.$cfile.'] frames.json ...', $endl);
+    print('usage: [-config='.$cfile.'] [-delay=secs] frames.json ...', $endl);
     exit -1
 }
 
@@ -40,6 +41,7 @@ read_config($cfile); # default, lazy could have complext logic to avoid this
 
 foreach my $fname (@ARGV) {
     if ($fname =~ /-config=/) { my ($a, $b) = split('=', $fname); read_config($b); next; }
+    if ($fname =~ /-delay=/) { my ($a, $b) = split('=', $fname); $delay=$b; next; }
     process_file($fname);
 }
 
@@ -68,6 +70,7 @@ sub process_file {
         print($url, ' ');
         my $response = $ua->post_form($url, $o);
         print('status=', $response->{'status'}, $endl);
+        sleep($delay) if $delay;
     }
 }
 

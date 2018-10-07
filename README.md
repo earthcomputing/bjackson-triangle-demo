@@ -62,6 +62,8 @@ I'd rather not include those things in this git repo, at least for now.
 ## test notes:
 
     1. ./launch-eccf-server.sh [Alice Bob Carol]
-    2. telnet localhost 1337
-    3. .post-frame.pl -config=blueprint-sim.json /tmp/triangle-1536648431697765/frames.json
+    2. nodejs eccf-server.js Alice
+    3. telnet localhost 1337
+    4. ./post-frame.pl -config=blueprint-sim.json /tmp/triangle-1536648431697765/frames.json
+    5. ./post-frame.pl -config=blueprint-sim.json -delay=3 frames.json
 
