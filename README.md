@@ -49,14 +49,18 @@ I'd rather not include those things in this git repo, at least for now.
 
 ## CPAN update(s):
 
+## various functions:
+
+    http://localhost:3000/?machineName=Alice&color=yellow
+    http://localhost:3000/config?trunc=-80
+    http://localhost:3000/git-config
+    http://localhost:3000/git-version
+    http://localhost:3000/port/enp6s0
+    http://localhost:3000/ports
+
 ## test notes:
 
     1. ./launch-eccf-server.sh [Alice Bob Carol]
     2. telnet localhost 1337
-    3. http://localhost:3000/ports
-    4. http://localhost:3000/port/enp6s0
-    5. ./post-frame.pl
-    6. http://localhost:3000/git-version
-    7. http://localhost:3000/git-config
-    8. http://localhost:3000/?machineName=Alice&color=yellow
+    3. .post-frame.pl -config=blueprint-sim.json /tmp/triangle-1536648431697765/frames.json
 
