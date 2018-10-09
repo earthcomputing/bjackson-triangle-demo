@@ -93,7 +93,7 @@ var TableWith3Rows = function(parent) {
             cell11.append($('<div>').attr({ id: 'counter_' + id, class: 'count' }).html(' --- '));
             cell31.append(
                 $('<div>').attr({ id: 'counter_' + id, class: 'count' }).append(
-                    $('<button>').data('id', id).attr({ id: 'sendButton_'. + id, class: 'med' }).css({ height: 45 }).html('Send').on('click', function(d) {
+                    $('<button>').data('id', id).attr({ id: 'sendButton_' + id, class: 'med' }).css({ height: 45 }).html('Send').on('click', function(d) {
                         var clr = $(this).css('background-color'); // is a string, we need the rbg fn
                         $(this).css({ 'background-color': 'pink' });
                         var obj = $(this);
