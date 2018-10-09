@@ -142,25 +142,25 @@ function isBlank(str) {
 
 var receiveListener = function (data) {
     data = data.toString();
-    var jd = data.split("\n");
-    for (var i = 0, len = jd.length; i < len; i++) {
-        var d = jd[i];
-        if (isBlank(d)) continue;
+    var lines = data.split("\n");
+    for (var i = 0, len = lines.length; i < len; i++) {
+        var json_txt = lines[i];
+        if (isBlank(json_txt)) continue;
 
         try {
-            var obj = JSON.parse(d);
+            var obj = JSON.parse(json_txt);
             if (!obj) continue;
 
             console.log( "entlCount:", obj.entlCount);
 
             // not checked against hostname
             if (!obj.machineName) continue;
-            json_data[obj.machineName] = d;
+            json_data[obj.machineName] = json_txt;
 
             // I/O to spinner
             if (!connected) continue;
-            io.emit('earth-update', d);
-            console.log('earth-update ' + d);
+            io.emit('earth-update', json_txt);
+            console.log('earth-update ' + json_txt);
         } catch(e) {
             console.log('error:' + e);
         }
