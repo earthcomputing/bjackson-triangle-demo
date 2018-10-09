@@ -359,7 +359,7 @@ var processCellAgent = (function() {
 
 var socket = io();
 
-// earth-update { machineName entlCount deviceName entlState AITRecieved }
+// earth-update { machineName deviceName linkState entlState entlCount AITSent AITRecieved }
 socket.on('earth-update', function(data) {
     data = JSON.parse(data.toString()); // why?
     processPacket(data);
@@ -373,7 +373,7 @@ socket.on('cellagent-update', function(data) {
 
 var sendPacket = function(source, msg) {
     var port = port2deviceName[source];
-    var data = { 'message' : msg, 'port' : port };
+    var data = { 'message': msg, 'port': port };
     socket.emit('aitMessage', data);
 };
 
@@ -381,7 +381,7 @@ var sendPacket = function(source, msg) {
 function sendMessage(formi, i) {
     var message = formi.inputbox.value;
     formi.inputbox.value = '';
-    var data = { 'message' : message, 'port' : i };
+    var data = { 'message': message, 'port': i };
     console.log(data);
     console.log(socket);
     socket.emit('aitMessage', data);
