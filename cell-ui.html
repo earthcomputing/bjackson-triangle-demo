@@ -175,7 +175,7 @@ $().ready(function() {
     inp.css('margin-left', '100px');
     inp.css('padding-left', '10px');
 
-    var in_div = $('<div>').attr({ id: 'cellAgentRecv', class: 'med' }).html('ABCD');
+    var in_div = $('<div>').attr({ id: 'cellAgentRecv', class: 'frame' }).html('ABCD');
 
     $('body').append('<br/>').append('CellAgent outbound:').append(inp);
     $('body').append('<br/>').append('CellAgent inbound:').append(in_div);
@@ -322,7 +322,7 @@ function dumper(frame) {
         var hexstr = frame.substr(i, 2);
         var ch = parseInt('0x' + hexstr, 16);
         str += String.fromCharCode(ch); // FIXME
-        if ((i % 80) > 77) str += "\n";
+        if ((i % 160) > 157) str += "\n";
     }
     return str;
 }
@@ -349,7 +349,7 @@ var processCellAgent = (function() {
             + '<br/>' + ' tree: ' + tree
             + '<br/>' + ' msg_id: ' + msg_id
             + '<br/>' + ' frame: '
-                + '<br/>' + dumper(frame)
+                + '<br/>' + '<pre>' + dumper(frame) + '</pre>'
         ;
         $('#cellAgentRecv').html(content);
     };
