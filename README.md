@@ -52,6 +52,9 @@ I'd rather not include those things in this git repo, at least for now.
 ## various functions:
 
     http://localhost:3000/?machineName=Alice&color=yellow
+    http://localhost:3001/?machineName=Bob&color=cyan
+    http://localhost:3002/?machineName=Carol&color=magenta
+
     http://localhost:3000/config?trunc=-80
     http://localhost:3000/config?verbose=true
     http://localhost:3000/git-config
@@ -62,8 +65,12 @@ I'd rather not include those things in this git repo, at least for now.
 ## test notes:
 
     1. ./launch-eccf-server.sh [Alice Bob Carol]
-    2. nodejs eccf-server.js Alice
-    3. telnet localhost 1337
+    2a. nodejs eccf-server.js Alice 3000 1337
+    2b. nodejs eccf-server.js Bob   3001 1338
+    2c. nodejs eccf-server.js Carol 3002 1339
+    3a. telnet localhost 1337
+    3b. telnet localhost 1338
+    3c. telnet localhost 1339
     4. ./post-frame.pl -config=blueprint-sim.json /tmp/triangle-1536648431697765/frames.json
     5. ./post-frame.pl -config=blueprint-sim.json -delay=3 frames.json
 

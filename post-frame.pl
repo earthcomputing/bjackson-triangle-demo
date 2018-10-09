@@ -85,9 +85,9 @@ sub read_config {
 
 sub api {
     my ($cell_id, $port) = @_;
-    my $ip_addr = $cell_map->{$cell_id};
+    my $ip_endpoint = $cell_map->{$cell_id};
     my $port_id = $port_map->[$port];
-    my $url = 'http://'.$ip_addr.':3000/port/'.$port_id;
+    my $url = 'http://'.$ip_endpoint.'/port/'.$port_id;
     return $url;
 }
 

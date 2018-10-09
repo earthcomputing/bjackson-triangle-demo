@@ -1,16 +1,16 @@
 
-const s_port = 3000;
-const c_port = 1337;
-
 const cell_ui = 'cell-ui.html';
 
 if (process.argv.length <= 2) {
-    console.log("Usage:", __filename, "hostname");
+    console.log("Usage:", __filename, "<hostname> [<s_port] [<c_port]");
     process.exit(-1);
 }
  
 const hostname = process.argv[2];
-console.log('hostname:', hostname);
+const s_port = (process.argv.length > 3) ? process.argv[3] : 3000;
+const c_port = (process.argv.length > 4) ? process.argv[4] : 1337;
+
+console.log('hostname:', hostname, s_port, c_port);
 
 var last_ait = {};
 var json_data = {};

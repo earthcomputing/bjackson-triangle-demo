@@ -6,9 +6,9 @@
         "enp9s0"
     ],
     "cells": {
-        "C:0": "localhost",
-        "C:1": "localhost",
-        "C:2": "localhost"
+        "C:0": "localhost:3000",
+        "C:1": "localhost:3001",
+        "C:2": "localhost:3002"
     },
     "nicknames": {
         "C:0": "Alice",

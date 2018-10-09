@@ -74,18 +74,19 @@ var g_center; // very kludgy
 
 // --
 
-var deviceName2port = { // zzzz how get port ids for a cell
+// mechanical connector ordering
+var port2deviceName = {
+    1: 'enp6s0',
+    2: 'enp8s0',
+    3: 'enp9s0',
+    4: 'enp7s0'
+}
+
+var deviceName2port = {
     enp6s0: '1',
     enp7s0: '4',
     enp8s0: '2',
     enp9s0: '3'
-}
-
-var port2deviceName = { // zzzz how get port ids for a cell
-    1: 'enp6s0',
-    4: 'enp7s0',
-    2: 'enp8s0',
-    3: 'enp9s0'
 }
 
 var spinners = [];
@@ -163,9 +164,9 @@ $().ready(function() {
     $('body').css({ background: machineColor });
 
     var table = TableWith3Rows($('body'));
-    table.addColumn(); // kludge, add left column just to space things over a bit
+    table.addColumn(); // kludge, space things over a bit
     table.addColumn('1');
-    table.addColumn('2'); // enp6s0
+    table.addColumn('2');
     table.addColumn('3');
     table.addColumn('4');
 
