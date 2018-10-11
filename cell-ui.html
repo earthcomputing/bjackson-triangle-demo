@@ -372,6 +372,7 @@ socket.on('cellagent-update', function(data) {
     processCellAgent(data);
 });
 
+// driver-update { port message }
 var sendPacket = function(source, msg) {
     var port = port2deviceName[source];
     var data = { 'message': msg, 'port': port };

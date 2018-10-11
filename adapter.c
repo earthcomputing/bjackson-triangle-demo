@@ -22,6 +22,8 @@ char *machine_name = NULL;
 
 #define MAX_JSON_TEXT 512
 
+// #define MAX_AIT_MESSAGE_SIZE 256
+
 typedef struct link_device {
     char *name;
     int linkState;
@@ -248,8 +250,8 @@ void entl_error_sig_handler(int signum) {
     }
 }
 
-#define INMAX 1024
-static char inlin[INMAX];
+#define INMAX 9000
+static char inlin[INMAX+1];
 
 // read available data from socket
 static int read_window() {
@@ -275,6 +277,13 @@ static void *read_task(void *me) {
 
         char *port = cJSON_GetObjectItem(root, "port")->valuestring;
         char *message = cJSON_GetObjectItem(root, "message")->valuestring;
+
+        // FIXME : message length
+        size_t len = strlen(message);
+        size_t few = (len < MAX_AIT_MESSAGE_SIZE) ? len : MAX_AIT_MESSAGE_SIZE;
+        char some[MAX_AIT_MESSAGE_SIZE + 1];
+        strncpy(some, message, few);
+        some[few + 1] = 0;
 
         for (int i = 0; i < NUM_INTERFACES; i++) {
             struct ifreq *req = &ifr[i];
