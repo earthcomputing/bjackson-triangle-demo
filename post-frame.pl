@@ -62,7 +62,7 @@ sub process_file {
         $o->{nickname} = $nick;
         print(join(' ', '   ', 'phy enqueue',
             $o->{nickname}, $cell_id, $port,
-            $o->{ait_code}, $o->{tree}, 'msg_id='.$o->{msg_id},
+            $o->{ait_code}, $o->{tree}, $o->{msg_type}, 'msg_id='.$o->{msg_id},
             substr($o->{frame}, 0, 10).'...',
             '; '
         ));
