@@ -69,7 +69,7 @@ app.post('/port/:port_id', function (req, res) {
     var host = req.body.pe_id;
     var port = req.params.port_id;
     var msg_type = req.body.msg_type;
-    if (config.trunc != 0) { console.log('POST port:', port, 'frame:', frame.substr(config.trunc)); }
+    if (config.trunc != 0) { console.log('POST', msg_type, 'port:', port, 'frame:', frame.substr(config.trunc)); }
     adapterWrite(port, msg_type);
     res.send('POST port ...' + JSON.stringify(req.params));
 });

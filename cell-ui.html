@@ -340,6 +340,7 @@ var processCellAgent = (function() {
         var frame = msg.frame;
         var ait_code = msg.ait_code;
         var msg_id = msg.msg_id;
+        var msg_type = msg.msg_type;
 
         var content =
             ' machineName: ' + machineName
@@ -348,6 +349,7 @@ var processCellAgent = (function() {
             + '<br/>' + ' port: ' + port
             + '<br/>' + ' ait_code: ' + ait_code
             + '<br/>' + ' tree: ' + tree
+            + '<br/>' + ' msg_type: ' + msg_type
             + '<br/>' + ' msg_id: ' + msg_id
             + '<br/>' + ' frame: '
                 + '<br/>' + '<pre>' + dumper(frame) + '</pre>'
