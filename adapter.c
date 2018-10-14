@@ -280,8 +280,8 @@ static void *read_task(void *me) {
 
         // FIXME : message length
         size_t len = strlen(message);
-        size_t few = (len < MAX_AIT_MESSAGE_SIZE) ? len : MAX_AIT_MESSAGE_SIZE;
-        char some[MAX_AIT_MESSAGE_SIZE + 1];
+        size_t few = (len < (MAX_AIT_MESSAGE_SIZE - 1)) ? len : (MAX_AIT_MESSAGE_SIZE - 1);
+        char some[MAX_AIT_MESSAGE_SIZE];
         strncpy(some, message, few);
         some[few + 1] = 0;
 
