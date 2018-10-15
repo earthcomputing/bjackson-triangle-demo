@@ -19,7 +19,7 @@ var c_socket;
 
 var config = {
     "trunc" : -30,
-    "verbose" : false
+    "verbose" : false,
     "periodic" : false
 };
 

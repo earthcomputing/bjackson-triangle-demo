@@ -343,16 +343,19 @@ var processCellAgent = (function() {
         var msg_id = msg.msg_id;
         var msg_type = msg.msg_type;
 
-        var content =
-            ' machineName: ' + machineName
-            + '<br/>' + ' nickname: ' + nickname
-            + '<br/>' + ' epoch: ' + epoch
-            + '<br/>' + ' cell_id: ' + cell_id
+        var content = '<b class="med">'
+                + '<p/>'
+            + '<br/>' + msg_type
             + '<br/>' + ' port: ' + port
-            + '<br/>' + ' ait_code: ' + ait_code
             + '<br/>' + ' tree: ' + tree
-            + '<br/>' + ' msg_type: ' + msg_type
+            + '<br/>' + ' epoch: ' + epoch
             + '<br/>' + ' msg_id: ' + msg_id
+                + '</b>'
+                + '<p/>'
+            + '<br/>' + ' cell_id: ' + cell_id
+            + '<br/>' + ' nickname: ' + nickname
+            + '<br/>' + ' machineName: ' + machineName
+            + '<br/>' + ' ait_code: ' + ait_code
             + '<br/>' + ' frame: '
                 + '<br/>' + '<pre>' + dumper(frame) + '</pre>'
         ;
