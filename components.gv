@@ -1,5 +1,5 @@
 digraph G {
-    rankdir=LR
+    rankdir=BT
 
     e1000e -> adapter [label="IOCTL"]
     adapter -> server [label="tcp/JSON"]
