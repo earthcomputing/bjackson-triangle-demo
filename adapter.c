@@ -36,6 +36,10 @@ typedef struct link_device {
 
 char *entlStateString[] = { "IDLE", "HELLO", "WAIT", "SEND", "RECEIVE", "AM", "BM", "AH", "BH", "ERROR" };
 
+static char *str4code(int code) {
+    return (code < 9) ? entlStateString[code] : "UNKNOWN";
+}
+
 static pthread_mutex_t access_mutex;
 #define ACCESS_LOCK pthread_mutex_lock(&access_mutex)
 #define ACCESS_UNLOCK pthread_mutex_unlock(&access_mutex)
@@ -48,7 +52,7 @@ static int w_socket;
 // stream JSON text data to server
 static void toServer(char *json) {
     write(w_socket, json, strlen(json));
-    printf("toServer: %s", json);
+    // printf("toServer: %s", json);
 }
 
 static int sock;
@@ -78,7 +82,7 @@ static int toJSON(link_device_t *dev) {
         machine_name,
         dev->name,
         (dev->linkState) ? "UP" : "DOWN",
-        (dev->entlState < 9) ? entlStateString[dev->entlState] : "UNKNOWN",
+        str4code(dev->entlState),
         dev->entlCount,
         dev->AITMessageS,
         dev->AITMessageR
@@ -96,47 +100,39 @@ static void init_link(link_device_t *l, char *port_id) {
 }
 
 static int entt_read_ait(struct ifreq *req, struct entt_ioctl_ait_data *atomic_msg) {
-    printf("entt_read_ait\n");
-
     memset(atomic_msg, 0, sizeof(struct entt_ioctl_ait_data));
     req->ifr_data = (char *)atomic_msg;
 
     ACCESS_LOCK;
-    printf("interface: %s\n", req->ifr_name);
     int rc = ioctl(sock, SIOCDEVPRIVATE_ENTT_READ_AIT, req);
     if (rc == -1) {
         perror("SIOCDEVPRIVATE_ENTT_READ_AIT");
     }
     else {
-        printf("num_messages %d\n", atomic_msg->num_messages);
+        printf("entt_read_ait - interface: %s num_messages: %d\n", req->ifr_name, atomic_msg->num_messages);
     }
     ACCESS_UNLOCK;
     return rc;
 }
 
 static int entt_send_ait(struct ifreq *req, struct entt_ioctl_ait_data *atomic_msg, char *msg) {
-    printf("entt_send_ait : \"%s\"\n", msg);
-
     atomic_msg->message_len = strlen(msg) + 1;
     snprintf(atomic_msg->data, MAX_AIT_MESSAGE_SIZE, "%s", msg);
     req->ifr_data = (char *)atomic_msg;
 
     ACCESS_LOCK;
-    printf("interface: %s\n", req->ifr_name);
     int rc = ioctl(sock, SIOCDEVPRIVATE_ENTT_SEND_AIT, req);
     if (rc == -1) {
         perror("SIOCDEVPRIVATE_ENTT_SEND_AIT");
     }
     else {
-        printf("succeeded\n");
+        printf("entt_send_ait - interface: %s msg: \"%s\" \n", req->ifr_name, msg);
     }
     ACCESS_UNLOCK;
     return rc;
 }
 
 static int entl_set_sigrcvr(struct ifreq *req, struct entl_ioctl_data *cdata, char *port_id, int pid) {
-    printf("entl_set_sigrcvr\n");
-
     memset(req, 0, sizeof(struct ifreq));
     strncpy(req->ifr_name, port_id, sizeof(req->ifr_name));
     memset(cdata, 0, sizeof(struct entl_ioctl_data));
@@ -144,51 +140,45 @@ static int entl_set_sigrcvr(struct ifreq *req, struct entl_ioctl_data *cdata, ch
     req->ifr_data = (char *)cdata;
 
     ACCESS_LOCK;
-    printf("interface: %s\n", req->ifr_name);
     int rc = ioctl(sock, SIOCDEVPRIVATE_ENTL_SET_SIGRCVR, req);
     if (rc == -1) {
         perror("SIOCDEVPRIVATE_ENTL_SET_SIGRCVR");
     }
     else {
-        printf("succeeded\n");
+        printf("entl_set_sigrcvr - interface: %s\n", req->ifr_name);
     }
     ACCESS_UNLOCK;
     return rc;
 }
 
 static int entl_rd_error(struct ifreq *req, struct entl_ioctl_data *cdata) {
-    printf("entl_rd_error\n");
-
     memset(cdata, 0, sizeof(struct entl_ioctl_data));
     req->ifr_data = (char *)cdata;
 
     ACCESS_LOCK;
-    printf("interface: %s\n", req->ifr_name);
     int rc = ioctl(sock, SIOCDEVPRIVATE_ENTL_RD_ERROR, req);
     if (rc == -1) {
         perror("SIOCDEVPRIVATE_ENTL_RD_ERROR");
     }
     else {
-        printf("succeeded\n");
+        printf("entl_rd_error - interface: %s\n", req->ifr_name);
     }
     ACCESS_UNLOCK;
     return rc;
 }
 
 static int entl_rd_current(struct ifreq *req, struct entl_ioctl_data *cdata) {
-    printf("entl_rd_current\n");
-
     memset(cdata, 0, sizeof(struct entl_ioctl_data));
     req->ifr_data = (char *)cdata;
 
     ACCESS_LOCK;
-    printf("interface: %s\n", req->ifr_name);
     int rc = ioctl(sock, SIOCDEVPRIVATE_ENTL_RD_CURRENT, req);
     if (rc == -1) {
         perror("SIOCDEVPRIVATE_ENTL_RD_CURRENT");
     }
     else {
-        printf("succeeded, state: %d\n", cdata->state.current_state);
+        // called periodically
+        // printf("entl_rd_current - interface: %s state: %d (%s)\n", req->ifr_name, cdata->state.current_state, str4code(cdata->state.current_state));
     }
     ACCESS_UNLOCK;
     return rc;
@@ -291,7 +281,7 @@ static void *read_task(void *me) {
             char *port_id = port_name[i];
 
             if (!strcmp(port, port_id)) {
-                printf( "port %s index %d message %s\n", port, i, message);
+                printf("port: %s index: %d message: \"%s\"\n", port, i, message);
                 entt_send_ait(req, atomic_msg, message);
                 break;
             }
@@ -330,7 +320,7 @@ int main (int argc, char **argv) {
         return -1;
     }
 
-    printf("Server Address: Machine Name %s\n", argv[1]);
+    printf("Server Address: Machine Name: %s\n", argv[1]);
     machine_name = argv[1];
 
     int sockfd = open_socket();

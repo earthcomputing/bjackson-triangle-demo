@@ -20,6 +20,7 @@ var c_socket;
 var config = {
     "trunc" : -30,
     "verbose" : false
+    "periodic" : false
 };
 
 // npm install body-parser express socket.io
@@ -152,7 +153,7 @@ var receiveListener = function (data) {
             var obj = JSON.parse(json_txt);
             if (!obj) continue;
 
-            console.log( "entlCount:", obj.entlCount);
+            if (config.periodic) console.log( "entlCount:", obj.entlCount);
 
             // not checked against hostname
             if (!obj.machineName) continue;
@@ -161,7 +162,7 @@ var receiveListener = function (data) {
             // I/O to spinner
             if (!connected) continue;
             io.emit('earth-update', json_txt);
-            console.log('earth-update ' + json_txt);
+            if (config.periodic) console.log('earth-update ' + json_txt);
         } catch(e) {
             console.log('error:' + e);
         }
