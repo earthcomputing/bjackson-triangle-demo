@@ -109,7 +109,9 @@ static int entt_read_ait(struct ifreq *req, struct entt_ioctl_ait_data *atomic_m
         perror("SIOCDEVPRIVATE_ENTT_READ_AIT");
     }
     else {
-        printf("entt_read_ait - interface: %s num_messages: %d\n", req->ifr_name, atomic_msg->num_messages);
+        char buf[MAX_AIT_MESSAGE_SIZE];
+        memcpy(buf, atomic_msg->data, atomic_msg->message_len);
+        printf("entt_read_ait - interface: %s num_messages: %d, \"%s\"\n", req->ifr_name, atomic_msg->num_messages, buf);
     }
     ACCESS_UNLOCK;
     return rc;
@@ -208,7 +210,7 @@ static void entl_ait_sig_handler(int signum) {
         if (rc == -1) continue;
 
         if (atomic_msg->message_len == 0) {
-            printf("  message_len is zero\n ");
+            printf("entl_ait_sig_handler - interface: %s message_len: 0\n ", req->ifr_name);
             continue;
         }
 
@@ -281,7 +283,7 @@ static void *read_task(void *me) {
             char *port_id = port_name[i];
 
             if (!strcmp(port, port_id)) {
-                printf("port: %s index: %d message: \"%s\"\n", port, i, message);
+                // printf("read_task - port: %s index: %d message: \"%s\"\n", port, i, message);
                 entt_send_ait(req, atomic_msg, message);
                 break;
             }
@@ -375,6 +377,7 @@ int main (int argc, char **argv) {
             int rc = entl_rd_current(req, cdata);
             if (rc == -1) continue;
 
+            // link_state, current_state, event_i_know
             if ((l->entlState != cdata->state.current_state)
             ||  (l->entlCount != cdata->state.event_i_know)
             ||  (l->linkState != cdata->link_state)) {
