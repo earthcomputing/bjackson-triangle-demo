@@ -334,6 +334,7 @@ var processCellAgent = (function() {
         var nickname = msg.nickname;
         if (machineName != nickname) return;
 
+        var epoch = msg.epoch;
         var cell_id = msg.pe_id;
         var port = msg.outbound;
         var tree = msg.tree;
@@ -345,6 +346,7 @@ var processCellAgent = (function() {
         var content =
             ' machineName: ' + machineName
             + '<br/>' + ' nickname: ' + nickname
+            + '<br/>' + ' epoch: ' + epoch
             + '<br/>' + ' cell_id: ' + cell_id
             + '<br/>' + ' port: ' + port
             + '<br/>' + ' ait_code: ' + ait_code
