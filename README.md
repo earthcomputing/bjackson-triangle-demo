@@ -64,6 +64,8 @@ I'd rather not include those things in this git repo, at least for now.
 
 ## test notes:
 
+    validate.sh frames.json.gz
+
     1. ./launch-eccf-server.sh [Alice Bob Carol]
     2a. nodejs eccf-server.js Alice 3000 1337
     2b. nodejs eccf-server.js Bob   3001 1338
@@ -73,4 +75,5 @@ I'd rather not include those things in this git repo, at least for now.
     3c. telnet localhost 1339
     4. ./post-frame.pl -config=blueprint-sim.json /tmp/triangle-1536648431697765/frames.json
     5. ./post-frame.pl -config=blueprint-sim.json -delay=3 frames.json
+
 
