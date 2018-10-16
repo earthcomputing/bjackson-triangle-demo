@@ -83,6 +83,8 @@ sub read_config {
     $nicknames = $config->{'nicknames'};
 }
 
+# FIXME : port_map must agree with blueprint!
+# { 1: 'enp6s0', 2: 'enp8s0', 3: 'enp9s0', 4: 'enp7s0' }
 sub api {
     my ($cell_id, $port) = @_;
     my $ip_endpoint = $cell_map->{$cell_id};

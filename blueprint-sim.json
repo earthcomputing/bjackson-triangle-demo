@@ -1,9 +1,9 @@
 {
     "ports": [
         "enp6s0",
-        "enp7s0",
         "enp8s0",
-        "enp9s0"
+        "enp9s0",
+        "enp7s0"
     ],
     "cells": {
         "C:0": "localhost:3000",
