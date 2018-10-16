@@ -1,0 +1,19 @@
+digraph G {
+    rankdir=LR
+    C0:p1 -> C1:p1 [label="a"]
+    C0:p0 -> C0:p0 [label="b"]
+    C1:p0 -> C1:p0 [label="c"]
+    C0:p2 -> C2:p1 [label="d"]
+    C2:p0 -> C2:p0 [label="e"]
+    C1:p2 -> C2:p3 [label="f"]
+    Internet -> C2:p2 [label="g"]
+    C0 [label="Alice\n C0  (b')"]
+    C1 [label="Bob\n C1  (c')"]
+    C2 [label="Carol\n C2  (e')"]
+    C2:p3 -> C1:p2 [label="( C1 )" color=blue]
+    C1:p2 -> C2:p3 [label="( C2 )" color=red]
+    C1:p1 -> C0:p1 [label="( C0 )" color=blue]
+    C0:p1 -> C1:p1 [label="( C1 )" color=red]
+    C2:p1 -> C0:p2 [label="( C0 )" color=blue]
+    C0:p2 -> C2:p1 [label="( C2 )" color=red]
+}
