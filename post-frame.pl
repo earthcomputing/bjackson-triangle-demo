@@ -28,6 +28,7 @@ $|++; # autoflush
 
 my $cfile = 'blueprint-triangle.json';
 my $delay = 0;
+my $channel_map;
 my $port_map;
 my $cell_map;
 my $nicknames;
@@ -78,6 +79,7 @@ sub read_config {
     my ($cfile) = @_;
     my @blueprint = inhale($cfile);
     my $config = decode_json(join($endl, @blueprint));
+    $channel_map = $config->{'channel_map'};
     $port_map = $config->{'ports'};
     $cell_map = $config->{'cells'};
     $nicknames = $config->{'nicknames'};
@@ -101,6 +103,12 @@ sub inhale {
     my @body = <FD>;
     close(FD);
     return @body;
+}
+
+## map (c1, p1) -> (c2, p2) -> (c1, pX) -> (c2, pY)
+## match (cA, cB) 1 -> X ; 2 -> Y
+sub remap {
+    my ($c1, $p1, $c2, $p2) = @_;
 }
 
 # my $ct = 'application/json; charset=utf-8';
