@@ -90,7 +90,7 @@ sub read_config {
 sub api {
     my ($cell_id, $port) = @_;
     my $ip_endpoint = $cell_map->{$cell_id};
-    my $port_id = $port_map->[$port];
+    my $port_id = $port_map->[$port - 1]; # adjust index, 0 is cell-agent
     my $url = 'http://'.$ip_endpoint.'/port/'.$port_id;
     return $url;
 }
