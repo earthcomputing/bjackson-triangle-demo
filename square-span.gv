@@ -1,0 +1,15 @@
+digraph G {
+    rankdir=LR
+    C1:p1 -> C0:p1 [label="C0" color=red]
+    C2:p1 -> C0:p2 [label="C0" color=red]
+    C3:p1 -> C0:p3 [label="C0" color=red]
+    C0:p1 -> C1:p1 [label="C1" color=green]
+    C2:p3 -> C1:p2 [label="C1" color=green]
+    C3:p2 -> C1:p3 [label="C1" color=green]
+    C0:p2 -> C2:p1 [label="C2" color=blue]
+    C1:p2 -> C2:p3 [label="C2" color=blue]
+    C3:p1 -> C0:p3 [label="C2 hop=1" color=blue]
+    C0:p3 -> C3:p1 [label="C3" color=cyan]
+    C1:p3 -> C3:p2 [label="C3" color=cyan]
+    C2:p3 -> C1:p2 [label="C3 hop=1" color=cyan]
+}
