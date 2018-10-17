@@ -1,26 +1,26 @@
 digraph G {
     rankdir=LR
 
-    Alice [label="Alice\n172.16.1.67"]
-    Bob [label="Bob\n172.16.1.40"]
-    Carol [label="Carol\n172.16.1.10"]
-    Ted [label="Ted\n172.16.1.xx"]
+    Alice [label="Alice (b)\n172.16.1.67"]
+    Bob [label="Bob (c)\n172.16.1.40"]
+    Carol [label="Carol (e)\n172.16.1.10"]
+    Ted [label="Ted (h)\n172.16.1.xx"]
 
-    Alice:p2 -> Bob:p1   [label="link1\nenp8s0" color=red]
-    Bob:p3 -> Carol:p2   [label="link4\nenp9s0" color=green]
-    Carol:p4 -> Ted:p3   [label="link6\nenp7s0" color=blue]
-    Ted:p1 -> Alice:p4   [label="link10\nenp6s0" color=grey style=dashed]
+    Alice:p2 -> Bob:p1   [label="link1 (a)\nenp8s0" color=red]
+    Bob:p3 -> Carol:p2   [label="link4 (f)\nenp9s0" color=green]
+    Carol:p4 -> Ted:p3   [label="link6 (xx)\nenp7s0" color=blue]
+    Ted:p1 -> Alice:p4   [label="link10 (g')\nenp6s0" color=grey style=dashed]
 
-    Alice:p4 -> Ted:p1   [label="link3\nenp7s0" color=cyan style=dashed]
-    Ted:p3 -> Carol:p4   [label="link12\nenp9s0" color=magenta style=dashed]
-    Carol:p2 -> Bob:p3   [label="link9\nenp8s0" color=yellow style=dashed]
-    Bob:p1 -> Alice:p2   [label="link7\nenp6s0" color=grey style=dashed]
+    Alice:p4 -> Ted:p1   [label="link3 (g)\nenp7s0" color=cyan style=dashed]
+    Ted:p3 -> Carol:p4   [label="link12 (xx')\nenp9s0" color=magenta style=dashed]
+    Carol:p2 -> Bob:p3   [label="link9 (f)\nenp8s0" color=yellow style=dashed]
+    Bob:p1 -> Alice:p2   [label="link7 (a)\nenp6s0" color=grey style=dashed]
 
-    Alice:p3 -> Carol:p1 [label="link2\nenp9s0" color=purple]
-    Carol:p1 -> Alice:p3 [label="link8\nenp6s0" color=grey style=dashed]
+    Alice:p3 -> Carol:p1 [label="link2 (d)\nenp9s0" color=purple]
+    Carol:p1 -> Alice:p3 [label="link8 (d')\nenp6s0" color=grey style=dashed]
 
-    Bob:p4 -> Ted:p2     [label="link5\nenp7s0" color=orange]
-    Ted:p2 -> Bob:p4     [label="link11\nenp8s0" color=grey style=dashed]
+    Bob:p4 -> Ted:p2     [label="link5 (i)\nenp7s0" color=orange]
+    Ted:p2 -> Bob:p4     [label="link11 (i')\nenp8s0" color=grey style=dashed]
 }
 
 [label="link6\nenp7s0" color=magenta]
@@ -37,4 +37,11 @@ D/enp7  10      11      12       -
 
 numbered starting at 1 ; 0 reserved for cell-agent
 { 1: 'enp6s0', 2: 'enp8s0', 3: 'enp9s0', 4: 'enp7s0' }
+
+C0:p1 -> C1:p1 [label="a"] 
+C0:p2 -> C2:p1 [label="d"] 
+C0:p3 -> C3:p1 [label="g"] 
+C1:p2 -> C2:p3 [label="f"] 
+C1:p3 -> C3:p2 [label="i"] 
+
 */
