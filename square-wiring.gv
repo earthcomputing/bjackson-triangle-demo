@@ -1,0 +1,40 @@
+digraph G {
+    rankdir=LR
+
+    Alice [label="Alice\n172.16.1.67"]
+    Bob [label="Bob\n172.16.1.40"]
+    Carol [label="Carol\n172.16.1.10"]
+    Ted [label="Ted\n172.16.1.xx"]
+
+    Alice:p2 -> Bob:p1   [label="link1\nenp8s0" color=red]
+    Bob:p3 -> Carol:p2   [label="link4\nenp9s0" color=green]
+    Carol:p4 -> Ted:p3   [label="link6\nenp7s0" color=blue]
+    Ted:p1 -> Alice:p4   [label="link10\nenp6s0" color=grey style=dashed]
+
+    Alice:p4 -> Ted:p1   [label="link3\nenp7s0" color=cyan style=dashed]
+    Ted:p3 -> Carol:p4   [label="link12\nenp9s0" color=magenta style=dashed]
+    Carol:p2 -> Bob:p3   [label="link9\nenp8s0" color=yellow style=dashed]
+    Bob:p1 -> Alice:p2   [label="link7\nenp6s0" color=grey style=dashed]
+
+    Alice:p3 -> Carol:p1 [label="link2\nenp9s0" color=purple]
+    Carol:p1 -> Alice:p3 [label="link8\nenp6s0" color=grey style=dashed]
+
+    Bob:p4 -> Ted:p2     [label="link5\nenp7s0" color=orange]
+    Ted:p2 -> Bob:p4     [label="link11\nenp8s0" color=grey style=dashed]
+}
+
+[label="link6\nenp7s0" color=magenta]
+
+/*
+link matrix (3 forward, 3 backward)
+columns=outbound
+
+        A/enp6  B/enp8  C/enp9  D/enp7
+A/enp6   -       1       2       3
+B/enp8   7       -       4       5
+C/enp9   8       9       -       6
+D/enp7  10      11      12       -
+
+numbered starting at 1 ; 0 reserved for cell-agent
+{ 1: 'enp6s0', 2: 'enp8s0', 3: 'enp9s0', 4: 'enp7s0' }
+*/

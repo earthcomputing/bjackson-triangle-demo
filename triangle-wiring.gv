@@ -1,0 +1,27 @@
+digraph G {
+    rankdir=LR
+
+    Alice [label="Alice\n172.16.1.67"]
+    Bob [label="Bob\n172.16.1.40"]
+    Carol [label="Carol\n172.16.1.10"]
+
+    Alice:p2 -> Bob:p1 [label="link1\nenp7s0" color=red]
+    Bob:p3 -> Carol:p2 [label="link3\nenp8s0" color=green]
+    Carol:p1 -> Alice:p3 [label="link5\nenp6s0" color=blue]
+
+    Alice:p3 -> Carol:p1 [label="link2\nenp8s0" color=cyan]
+    Carol:p2 -> Bob:p3 [label="link6\nenp7s0" color=magenta]
+    Bob:p1 -> Alice:p2 [label="link4\nenp6s0" color=yellow]
+}
+
+/*
+link matrix (3 forward, 3 backward)
+
+        A/enp6  B/enp7  C/enp8
+A/enp6  -       1       2
+B/enp7  4       -       3
+C/enp8  5       6       -
+
+numbered starting at 1 ; 0 reserved for cell-agent
+port_map = [ 'enp6s0', 'enp7s0', 'enp8s0', 'enp9s0' ];
+*/
