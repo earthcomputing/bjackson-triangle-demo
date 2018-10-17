@@ -76,4 +76,7 @@ I'd rather not include those things in this git repo, at least for now.
     4. ./post-frame.pl -config=blueprint-sim.json /tmp/triangle-1536648431697765/frames.json
     5. ./post-frame.pl -config=blueprint-sim.json -delay=3 frames.json
 
+## software update notes:
 
+    adjust GITUSER
+    host-update.command
