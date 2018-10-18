@@ -80,3 +80,28 @@ I'd rather not include those things in this git repo, at least for now.
 
     adjust GITUSER
     host-update.command
+
+## first time laptop setup:
+
+    brew install telnet
+
+    brew install nodejs
+    which node
+    which nodejs
+    cd /usr/local/bin
+    ln -s node nodejs
+    npm install body-parser express socket.io
+
+    brew install perl
+    cpan JSON
+    cpan Data::GUID
+
+## ssh keys:
+
+    create a key (.ssh : id_rsa, id_rsa.pub
+
+    for each of the 3 hosts:
+    add your public key (id_rsa.pub)  to:
+
+        ~/.ssh/authorized_keys
+
