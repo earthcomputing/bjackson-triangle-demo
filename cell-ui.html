@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
+<html lang="en">
+<head>
 <style>
     table { background: 'red'; cellspacing: 0; }
     table, td {  border: 0px solid black; background: 'none'; }
@@ -38,14 +40,52 @@
 <script src='offline/d3.min.js' type="text/Javascript"></script>
 <script src='offline/d3-selection-multi.min.js' type="text/Javascript">implements .attrs for d3.v4 GGG</script>
 -->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.min.css">
 <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 <script src="https://d3js.org/d3.v5.min.js"></script>
 <script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
 <script src="node_modules/socket.io-client/dist/socket.io.js"></script>
-
-
+</head>
+<body>
 <h1>Earth Computing</h1>
 <h2>cells:</h2>
+<h3>CellAgent:</h3>
+<h4>logs:</h4>
+<div id="tabs">
+  <ul>
+    <li><a href="#port-0"><span>CellAgent</span></a></li>
+    <li><a href="#port-1"><span>Port #1 (enp6)</span></a></li>
+    <li><a href="#port-2"><span>Port #2 (enp8)</span></a></li>
+    <li><a href="#port-3"><span>Port #3 (enp9)</span></a></li>
+    <li><a href="#port-4"><span>Port #4 (enp7)</span></a></li>
+  </ul>
+  <div id="port-0">
+    <div id='cellAgentRecv' class='frame'> ABCD </div>
+    cell agent messages:
+    <div id='cellAgentLog'> </div>
+  </div>
+  <div id="port-1">
+    port 1: enp6
+    <div id='port1'> </div>
+  </div>
+  <div id="port-2">
+    port 2: enp8
+    <div id='port2'> </div>
+  </div>
+  <div id="port-3">
+    port 3: enp9
+    <div id='port3'> </div>
+  </div>
+  <div id="port-4">
+    port 4: enp7
+    <div id='port4'> </div>
+  </div>
+</div>
+ 
+<script>
+$( "#tabs" ).tabs();
+</script>
 
 <script> // https://bl.ocks.org/mbostock/5100636
 
@@ -112,7 +152,7 @@ var TableWith3Rows = function(parent) {
     table.append(r1).append(r2).append(r3).append(r4).css({ background: boxColor });
     table.css({ background: 'none' });
 
-    $('body').append(table);
+    $('h2').append(table);
 
     var self = {
         addColumn: function(id) { // adds a column to the table for a port's data
@@ -169,7 +209,7 @@ var TableWith3Rows = function(parent) {
 $().ready(function() {
     $('body').css({ background: machineColor });
 
-    var table = TableWith3Rows($('body'));
+    var table = TableWith3Rows($('h2'));
     table.addColumn(); // kludge, space things over a bit
     table.addColumn('1');
     table.addColumn('2');
@@ -182,10 +222,10 @@ $().ready(function() {
     inp.css('margin-left', '100px');
     inp.css('padding-left', '10px');
 
-    var in_div = $('<div>').attr({ id: 'cellAgentRecv', class: 'frame' }).html('ABCD');
+    // var in_div = $('<div>').attr({ id: 'cellAgentRecv', class: 'frame' }).html('ABCD');
 
-    $('body').append('<br/>').append('CellAgent outbound:').append(inp);
-    $('body').append('<br/>').append('CellAgent inbound:').append(in_div);
+    $('h3').append('<br/>').append('outbound:').append(inp);
+    // $('h3').append('<br/>').append('inbound:').append(in_div);
 
     attachSpinners(); // should only do this once
 });
@@ -366,6 +406,16 @@ var processCellAgent = (function() {
                 + '<br/>' + '<pre>' + dumper(frame) + '</pre>'
         ;
         $('#cellAgentRecv').html(content);
+
+        var ca_line = ''
+            + '<br/>' + ' port: ' + port + ' ' + msg_type
+        ;
+        $('#cellAgentLog').append(ca_line);
+        var port_line = ''
+            + '<br/>' + msg_type
+        ;
+        $('#port'+port).append(port_line);
+
     };
 })();
 
@@ -416,3 +466,5 @@ var runMockData = function(data) {
 };
 
 </script>
+</body>
+</html>
