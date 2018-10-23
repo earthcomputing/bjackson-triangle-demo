@@ -19,6 +19,13 @@
         font-size: 60px; font-style: normal; font-variant: normal; font-weight: 500; line-height: 15.4px;
     }
 
+    #AITMsgBody {
+        border: 6px solid #999;
+        border-radius: 10px;
+        margin-left: 100px;
+        padding-left: 10px;
+    }
+
     path  {
         fill: 'blue'
     }
@@ -49,9 +56,20 @@
 </head>
 <body>
 <h1>Earth Computing</h1>
-<h2>cells:</h2>
-<h3>CellAgent:</h3>
-<h4>logs:</h4>
+<h2 id='machineName'>Cell: machineName</h2>
+
+<table id='driverState'>
+<tr id='row1'/>
+<tr id='row2'/>
+<tr id='row3'/>
+<tr id='row4'/>
+</table>
+
+<h3 id='aim_msg'>CellAgent:</h3>
+outbound: <input id='AITMsgBody' class='med'/>
+<br/>
+
+<h3 id='logs'>logs:</h3>
 <div id="tabs">
   <ul>
     <li><a href="#port-0"><span>CellAgent</span></a></li>
@@ -84,10 +102,14 @@
 </div>
  
 <script>
-$( "#tabs" ).tabs();
+$("#tabs").tabs();
 </script>
 
 <script> // https://bl.ocks.org/mbostock/5100636
+
+function setMachineName(machineName) {
+    $('#machineName').html('Cell: ' + machineName);
+}
 
 var kv = document.URL.split('?')[1].split('&').map(function(d) { return d.split('='); });
 var o = {}; kv.forEach(function(d) { o[d[0]] = d[1]; }); // convert to a hash
@@ -140,31 +162,32 @@ var p_messages = [ '', '', '', '' ];
 
 // --
 
-$('h2').html('Cell: ' + machineName);
+setMachineName(machineName);
 
-var TableWith3Rows = function(parent) {
-    var r1 = $('<tr>');
-    var r2 = $('<tr>');
-    var r3 = $('<tr>');
-    var r4 = $('<tr>');
+var tableBuilder = function(table) {
+    var r1 = $('#row1');
+    var r2 = $('#row2');
+    var r3 = $('#row3');
+    var r4 = $('#row4');
 
-    var table = $('<table>').attr({ cellspacing: 0 });
-    table.append(r1).append(r2).append(r3).append(r4).css({ background: boxColor });
+    table.attr({ cellspacing: 0 });
+    table.css({ background: boxColor });
     table.css({ background: 'none' });
-
-    $('h2').append(table);
 
     var self = {
         addColumn: function(id) { // adds a column to the table for a port's data
-            cell11 = $('<td>').attr({ id: 'count_' + id, class: 'column' + id + ' tdForCount', align: 'center', valign: 'middle' }).css({ background: boxColor });
-            cell21 = $('<td>').attr({ id: 'meter_' + id, class: 'column' + id }).css({ background: boxColor });
-            cell31 = $('<td>').attr({ id: 'send_'  + id, class: 'column' + id + ' tdForButton', align: 'center', valign: 'middle' });
-            cell41 = $('<td>').attr({ id: 'recv_'  + id, class: 'column' + id + ' tdForRecv'  , align: 'center', valign: 'middle' });
+            cell1 = $('<td>').attr({ id: 'count_' + id, class: 'column' + id + ' tdForCount', align: 'center', valign: 'middle' });
+            cell2 = $('<td>').attr({ id: 'meter_' + id, class: 'column' + id });
+            cell3 = $('<td>').attr({ id: 'send_'  + id, class: 'column' + id + ' tdForButton', align: 'center', valign: 'middle' });
+            cell4 = $('<td>').attr({ id: 'recv_'  + id, class: 'column' + id + ' tdForRecv'  , align: 'center', valign: 'middle' });
 
-            r1.append(cell11);
-            r2.append(cell21);
-            r3.append(cell31);
-            r4.append(cell41);
+            r1.append(cell1);
+            r2.append(cell2);
+            r3.append(cell3);
+            r4.append(cell4);
+
+            cell1.css({ background: boxColor });
+            cell2.css({ background: boxColor });
 
             $('td').css({ width: siz });
             $('.tdForCount' ).attr({ height:  50 }); // height is a min value
@@ -186,12 +209,13 @@ var TableWith3Rows = function(parent) {
             var button = $('<button>').data('id', id).attr({ id: 'sendButton_' + id, class: 'med' }).css({ height: 45 }).html('Send').on('click', click_fcn)
 
             // init content NOT part of the table layout
-            cell11.append($('<div>').attr({ id: 'counter_' + id, class: 'count' }).html(' --- '));
-            cell31.append($('<div>').attr({ id: 'counter_' + id, class: 'count' }).append(button));
-            cell41.append($('<div>').attr({ id: 'recvBody_' + id, class: 'r45 med' }).html('-----'));
+            cell1.append($('<div>').attr({ id: 'counter_' + id, class: 'count' }).html(' --- '));
+            cell3.append($('<div>').attr({ id: 'counter_' + id, class: 'count' }).append(button));
+            cell4.append($('<div>').attr({ id: 'recvBody_' + id, class: 'r45 med' }).html('-----'));
 
             $('#recv_undefined').html('RECV: ').attr({ class: 'med' })
 
+            // cell2
             var svg = d3.select('#meter_' + id).append('svg').attrs({ id: 'svg_' + id, width: wid, height: ht });
             var f = 'translate(' + svg.attr('width') / 2 + ', ' + svg.attr('height') / 2 + ')'; // origin at center
             var g = svg.append('g').attr('transform', f);
@@ -209,23 +233,13 @@ var TableWith3Rows = function(parent) {
 $().ready(function() {
     $('body').css({ background: machineColor });
 
-    var table = TableWith3Rows($('h2'));
-    table.addColumn(); // kludge, space things over a bit
-    table.addColumn('1');
-    table.addColumn('2');
-    table.addColumn('3');
-    table.addColumn('4');
-
-    var inp = $('<input>').attr({ id: 'AITMsgBody', class: 'med' });
-    inp.css('border', '6px solid #999');
-    inp.css('border-radius', '10px');
-    inp.css('margin-left', '100px');
-    inp.css('padding-left', '10px');
-
-    // var in_div = $('<div>').attr({ id: 'cellAgentRecv', class: 'frame' }).html('ABCD');
-
-    $('h3').append('<br/>').append('outbound:').append(inp);
-    // $('h3').append('<br/>').append('inbound:').append(in_div);
+    var table = $('#driverState');
+    var builder = tableBuilder(table);
+    builder.addColumn(); // kludge, space things over a bit
+    builder.addColumn('1');
+    builder.addColumn('2');
+    builder.addColumn('3');
+    builder.addColumn('4');
 
     attachSpinners(); // should only do this once
 });
@@ -407,17 +421,31 @@ var processCellAgent = (function() {
         ;
         $('#cellAgentRecv').html(content);
 
-        var ca_line = ''
-            + '<br/>' + ' port: ' + port + ' ' + msg_type
-        ;
-        $('#cellAgentLog').append(ca_line);
-        var port_line = ''
-            + '<br/>' + msg_type
-        ;
-        $('#port'+port).append(port_line);
-
+        xmit(port, msg_type);
     };
 })();
+
+function xmit(port, msg_type) {
+    var ca_line = ''
+        + '<br/>' + ' port: ' + port + ' <font color="red">xmit:</font> ' + msg_type
+    ;
+    $('#cellAgentLog').append(ca_line);
+        var port_line = ''
+            + '<br/>' + '<font color="red">xmit:</font> ' + msg_type
+        ;
+        $('#port'+port).append(port_line);
+}
+
+function recv(port, msg_type) {
+    var ca_line = ''
+        + '<br/>' + ' port: ' + port + ' <font color="blue">recv:</font> ' + msg_type
+    ;
+    $('#cellAgentLog').append(ca_line);
+        var port_line = ''
+            + '<br/>' + '<font color="blue">recv:</font> ' + msg_type
+        ;
+        $('#port'+port).append(port_line);
+}
 
 // =============================== the real stuff
 
