@@ -69,8 +69,6 @@
 outbound: <input id='AITMsgBody' class='med'/>
 <br/>
 
-<div id='cellAgentRecv' class='frame'> ABCD </div>
-
 <h3 id='logs'>logs:</h3>
 <div id="tabs">
   <ul>
@@ -82,26 +80,29 @@ outbound: <input id='AITMsgBody' class='med'/>
   </ul>
   <div id="port-0">
     cell agent messages:
-    <div id='cellAgentLog'> </div>
+    <div id='cellAgentLog' style="overflow-y: scroll; height:400px;"> </div>
   </div>
   <div id="port-1">
     port 1: enp6
-    <div id='port1'> </div>
+    <div id='port1' style="overflow-y: scroll; height:400px;"> </div>
   </div>
   <div id="port-2">
     port 2: enp8
-    <div id='port2'> </div>
+    <div id='port2' style="overflow-y: scroll; height:400px;"> </div>
   </div>
   <div id="port-3">
     port 3: enp9
-    <div id='port3'> </div>
+    <div id='port3' style="overflow-y: scroll; height:400px;"> </div>
   </div>
   <div id="port-4">
     port 4: enp7
-    <div id='port4'> </div>
+    <div id='port4' style="overflow-y: scroll; height:400px;"> </div>
   </div>
 </div>
  
+<!-- injected operation -->
+<div id='cellAgentRecv' class='frame'> ABCD </div>
+
 <script>
 $("#tabs").tabs();
 </script>

@@ -59,7 +59,7 @@ sub process_file {
 
         my $cell_id = $o->{pe_id};
         my $port = $o->{outbound};
-        my $nick = $nicknames->{$cell_id};
+        my $nick = $nicknames->{$cell_id}; $nick = '' unless defined $nick;
         $o->{nickname} = $nick;
         print(join(' ', '   ', 'phy enqueue',
             $o->{nickname}, $cell_id, $port,
@@ -69,7 +69,7 @@ sub process_file {
         ));
         my $url = api($cell_id, $port);
         unless (defined $url) {
-            print($endl, join(' ', 'no match -', $nick, 'cell:', $cell_id, 'port:', $port), $endl);
+            print($endl, join(' ', 'skipping -', $nick, 'cell:', $cell_id, 'port:', $port), $endl);
             next;
         }
         print($url, ' ');
@@ -95,6 +95,7 @@ sub api {
     my ($cell_id, $port) = @_;
     my $ip_endpoint = $cell_map->{$cell_id};
     return undef unless defined $ip_endpoint;
+    return undef if $port > @{$port_map};
 
     my $port_id = $port_map->[$port - 1]; # adjust index, 0 is cell-agent
     my $url = 'http://'.$ip_endpoint.'/port/'.$port_id;
