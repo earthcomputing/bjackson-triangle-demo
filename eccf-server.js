@@ -159,10 +159,12 @@ var receiveListener = function (data) {
             // not checked against hostname
             if (!obj.machineName) continue;
             if (!obj.deviceName) continue;
+            if (!json_data[obj.machineName]) { json_data[obj.machineName] = {}; }
             json_data[obj.machineName][obj.deviceName] = json_txt;
 
+            if (!last_state[obj.machineName]) { last_state[obj.machineName] = {}; }
             var was_state = last_state[obj.machineName][obj.deviceName];
-            var toggled = was_state != obj.linkState;
+            var toggled = !was_state || (was_state != obj.linkState);
             last_state[obj.machineName][obj.deviceName] = obj.linkState;
 
             // I/O to spinner
