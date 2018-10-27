@@ -13,6 +13,7 @@ const c_port = (process.argv.length > 4) ? process.argv[4] : 1337;
 console.log('hostname:', hostname, s_port, c_port);
 
 var last_ait = {};
+var last_state = {};
 var json_data = {};
 var connected = 0;
 var c_socket;
@@ -157,12 +158,17 @@ var receiveListener = function (data) {
 
             // not checked against hostname
             if (!obj.machineName) continue;
-            json_data[obj.machineName] = json_txt;
+            if (!obj.deviceName) continue;
+            json_data[obj.machineName][obj.deviceName] = json_txt;
+
+            var was_state = last_state[obj.machineName][obj.deviceName];
+            var toggled = was_state != obj.linkState;
+            last_state[obj.machineName][obj.deviceName] = obj.linkState;
 
             // I/O to spinner
             if (!connected) continue;
             io.emit('earth-update', json_txt);
-            if (config.periodic) console.log('earth-update ' + json_txt);
+            if (toggled || config.periodic) console.log('earth-update ' + json_txt);
         } catch(e) {
             console.log('error:' + e);
         }
