@@ -109,15 +109,15 @@ static int entt_read_ait(struct ifreq *req, struct entt_ioctl_ait_data *atomic_m
     if (rc == -1) {
         perror("SIOCDEVPRIVATE_ENTT_READ_AIT");
     }
-    else if (atomic_msg->message_len == 0) {
-        printf("entt_read_ait - interface: %s num_messages: %d, num_queued: %d, empty msg\n", req->ifr_name, atomic_msg->num_messages, atomic_msg->num_queued);
-    }
-    else {
+    else if (atomic_msg->message_len > 0) {
         // what if message_len >= MAX_AIT_MESSAGE_SIZE ??
         char buf[MAX_AIT_MESSAGE_SIZE];
         memset(buf, 0, MAX_AIT_MESSAGE_SIZE);
         memcpy(buf, atomic_msg->data, atomic_msg->message_len);
         printf("entt_read_ait - interface: %s num_messages: %d, num_queued: %d, \"%s\"\n", req->ifr_name, atomic_msg->num_messages, atomic_msg->num_queued, buf);
+    }
+    else if ((atomic_msg->num_messages != 0) && (atomic_msg->num_queued != 0)) {
+        printf("entt_read_ait - interface: %s num_messages: %d, num_queued: %d\n", req->ifr_name, atomic_msg->num_messages, atomic_msg->num_queued);
     }
     ACCESS_UNLOCK;
     return rc;
