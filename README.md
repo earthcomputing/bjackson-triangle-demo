@@ -37,6 +37,23 @@ I'd rather not include those things in this git repo, at least for now.
     cd /home/demouser/earthcomputing
     git clone https://github.com/earthcomputing/bjackson-triangle-demo.git triangle-demo
 
+## update notes:
+
+    do-update.sh
+
+    alice 172.16.1.67
+    bob 172.16.1.40
+    carol 172.16.1.105
+
+    ssh demouser@172.16.1.67
+    ssh demouser@172.16.1.40
+    ssh demouser@172.16.1.105
+
+    cd /home/demouser/earthcomputing/triangle-demo
+    git pull
+    make -f Makefile.linux
+
+
 ## Adapter build:
 
     make [-f Makefile.linux]
@@ -48,6 +65,9 @@ I'd rather not include those things in this git repo, at least for now.
     npm install body-parser express socket.io
 
 ## CPAN update(s):
+
+    cpan JSON
+    cpan Data::GUID
 
 ## various functions:
 
