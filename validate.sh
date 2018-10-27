@@ -11,7 +11,7 @@ endif
 
 set wdir = `pwd`
 
-set dir = /tmp/validator
+set dir = /tmp/virtual-replay
 mkdir -p ${dir}
 
 cat > ${dir}/simulated-triangle-demo.html << 'EOF'
