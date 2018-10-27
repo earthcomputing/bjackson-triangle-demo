@@ -20,18 +20,19 @@
 
 char *machine_name = NULL;
 
-#define MAX_JSON_TEXT 512
+// 2 * string[256] + 4 "short" strings plus 1 number plus syntax overhead
+#define MAX_JSON_TEXT 1024
 
 // #define MAX_AIT_MESSAGE_SIZE 256
 
 typedef struct link_device {
     char *name;
-    int linkState;
-    int entlState;
-    int entlCount;
-    char AITMessageR[MAX_AIT_MESSAGE_SIZE];
-    char AITMessageS[MAX_AIT_MESSAGE_SIZE];
-    char json[MAX_AIT_MESSAGE_SIZE];
+    int linkState; // entl_error_sig_handler
+    int entlState; // entl_error_sig_handler
+    int entlCount; // entl_error_sig_handler
+    char AITMessageR[MAX_AIT_MESSAGE_SIZE]; // entl_ait_sig_handler
+    char AITMessageS[MAX_AIT_MESSAGE_SIZE]; // unused ??
+    char json[MAX_JSON_TEXT]; // toJSON
 } link_device_t;
 
 char *entlStateString[] = { "IDLE", "HELLO", "WAIT", "SEND", "RECEIVE", "AM", "BM", "AH", "BH", "ERROR" };
@@ -78,7 +79,7 @@ static int sock;
 static int toJSON(link_device_t *dev) {
     if (NULL == dev) return 0;
 
-    int size = snprintf(dev->json, MAX_AIT_MESSAGE_SIZE, JSON_PAT,
+    int size = snprintf(dev->json, MAX_JSON_TEXT, JSON_PAT,
         machine_name,
         dev->name,
         (dev->linkState) ? "UP" : "DOWN",
@@ -111,7 +112,11 @@ static int entt_read_ait(struct ifreq *req, struct entt_ioctl_ait_data *atomic_m
     else {
         char buf[MAX_AIT_MESSAGE_SIZE];
         memcpy(buf, atomic_msg->data, atomic_msg->message_len);
-        printf("entt_read_ait - interface: %s num_messages: %d, \"%s\"\n", req->ifr_name, atomic_msg->num_messages, buf);
+        if (atomic_msg->message_len) { buf[0] = 0; }
+
+        // FIXME : garbled ?? - num_messages ??
+        // what if message_len >= MAX_AIT_MESSAGE_SIZE ??
+        printf("entt_read_ait - interface: %s num_messages: %d, num_queued: %d, \"%s\"\n", req->ifr_name, atomic_msg->num_messages, atomic_msg->num_queued, buf);
     }
     ACCESS_UNLOCK;
     return rc;
@@ -128,17 +133,18 @@ static int entt_send_ait(struct ifreq *req, struct entt_ioctl_ait_data *atomic_m
         perror("SIOCDEVPRIVATE_ENTT_SEND_AIT");
     }
     else {
-        printf("entt_send_ait - interface: %s msg: \"%s\" \n", req->ifr_name, msg);
+        printf("entt_send_ait - interface: %s msg: \"%s\"\n", req->ifr_name, msg);
     }
     ACCESS_UNLOCK;
     return rc;
 }
 
 static int entl_set_sigrcvr(struct ifreq *req, struct entl_ioctl_data *cdata, char *port_id, int pid) {
-    memset(req, 0, sizeof(struct ifreq));
-    strncpy(req->ifr_name, port_id, sizeof(req->ifr_name));
     memset(cdata, 0, sizeof(struct entl_ioctl_data));
     cdata->pid = pid;
+
+    memset(req, 0, sizeof(struct ifreq));
+    strncpy(req->ifr_name, port_id, sizeof(req->ifr_name));
     req->ifr_data = (char *)cdata;
 
     ACCESS_LOCK;
@@ -147,7 +153,7 @@ static int entl_set_sigrcvr(struct ifreq *req, struct entl_ioctl_data *cdata, ch
         perror("SIOCDEVPRIVATE_ENTL_SET_SIGRCVR");
     }
     else {
-        printf("entl_set_sigrcvr - interface: %s\n", req->ifr_name);
+        printf("entl_set_sigrcvr - interface: %s pid: %d\n", req->ifr_name, pid);
     }
     ACCESS_UNLOCK;
     return rc;
@@ -163,7 +169,7 @@ static int entl_rd_error(struct ifreq *req, struct entl_ioctl_data *cdata) {
         perror("SIOCDEVPRIVATE_ENTL_RD_ERROR");
     }
     else {
-        printf("entl_rd_error - interface: %s\n", req->ifr_name);
+        // printf("entl_rd_error - interface: %s\n", req->ifr_name);
     }
     ACCESS_UNLOCK;
     return rc;
@@ -197,7 +203,7 @@ link_device_t links[NUM_INTERFACES];
 
 // get hardware state, post to server (ENTT_READ_AIT)
 static void entl_ait_sig_handler(int signum) {
-    printf("***  entl_ait_sig_handler signal: (%d) ***\n", signum);
+    printf("*** entl_ait_sig_handler signal: (%d) ***\n", signum);
 
     if (signum != SIGUSR2) { return; }
 
@@ -208,15 +214,13 @@ static void entl_ait_sig_handler(int signum) {
 
         int rc = entt_read_ait(req, atomic_msg);
         if (rc == -1) continue;
+        if (atomic_msg->message_len == 0) continue;
 
-        if (atomic_msg->message_len == 0) {
-            printf("entl_ait_sig_handler - interface: %s message_len: 0\n ", req->ifr_name);
-            continue;
-        }
-
+        printf("entl_ait_sig_handler - interface: %s message_len: %d\n ", req->ifr_name, atomic_msg->message_len);
         memcpy(l->AITMessageR, atomic_msg->data, atomic_msg->message_len);
         toJSON(l);
         toServer(l->json);
+        printf("link state: %s", l->json);
     }
 }
 
@@ -238,6 +242,7 @@ void entl_error_sig_handler(int signum) {
             l->linkState = cdata->link_state;
             toJSON(l);
             toServer(l->json);
+            printf("link state: %s", l->json);
         }
     }
 }
@@ -350,24 +355,27 @@ int main (int argc, char **argv) {
     pid_t pid = getpid();
     printf("pid : %d\n", pid);
 
+    printf("registering signal handlers\n");
     for (int i = 0; i < NUM_INTERFACES; i++) {
         struct ifreq *req = &ifr[i];
         struct entl_ioctl_data *cdata = &entl_data[i];
         char *port_id = port_name[i];
-        entl_set_sigrcvr(req, cdata, port_id, pid);
+        int rc = entl_set_sigrcvr(req, cdata, port_id, pid);
+        // FIXME: printf should be here rather than within entl_set_sigrcvr
     }
 
     for (int i = 0; i < NUM_INTERFACES; i++) {
         struct ifreq *req = &ifr[i];
         struct entl_ioctl_data *cdata = &entl_data[i];
-        entl_rd_error(req, cdata);
+        int rc = entl_rd_error(req, cdata);
+        // FIXME: printf should be here rather than within entl_rd_error
     }
 
     int rc = pthread_create(&read_thread, NULL, read_task, NULL);
     if (rc != 0) printf("pthread_create failed\n");
 
     // loop : ENTL_RD_CURRENT, toServer
-    printf("Entering app loop \n");
+    printf("update loop\n");
     while (1) {
         for (int i = 0; i < NUM_INTERFACES; i++) {
             struct ifreq *req = &ifr[i];
