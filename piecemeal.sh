@@ -54,3 +54,4 @@ open ${dir}/carol-adapt.command
 
 open ${dir}/triangle-demo.html
 
+open ${dir}/

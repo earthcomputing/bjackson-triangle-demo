@@ -3,6 +3,29 @@ simplified and enhanced version of original hardware demo
 
 ## Earth Computing Cellular Fabric (ECCF) - Atomic Link demo
 
+How to run the hardware-replay demo:
+
+1. Identify a "packet trace" file:
+
+    frames-square-1539761670617241.json.gz
+
+2. Power on all 3 hosts ; check that network is up
+
+3. Prepare the software components:
+
+    piecemeal.sh frames-square-1539761670617241.json.gz
+
+4. Check that the atomic links are 'active', up/down if necessary:
+   [know the 'su' password??]
+
+    wiggle.sh
+
+5. Start the replay
+
+    open poster.command (can do this thru finder)
+
+## Origins
+
 derived from: https://github.com/earthcomputing/NALDD.git
 
 short term :
