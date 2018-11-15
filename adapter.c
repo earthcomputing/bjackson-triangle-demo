@@ -14,6 +14,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <time.h>
+#include <syslog.h>
 
 #include "cJSON.h"
 #include "entl_user_api.h"
@@ -53,7 +54,7 @@ static int w_socket;
 // stream JSON text data to server
 static void toServer(char *json) {
     write(w_socket, json, strlen(json));
-    // printf("toServer: %s", json);
+    // syslog(LOG_DEBUG, "(%s) toServer: %s", machine_name, json);
 }
 
 static int sock;
@@ -88,7 +89,7 @@ static int toJSON(link_device_t *dev) {
         dev->AITMessageS,
         dev->AITMessageR
     );
-    if (size < 0) { perror("JSON snprintf"); }
+    if (size < 0) { syslog(LOG_WARNING, "(%s) JSON snprintf: %m", machine_name); }
     return size;
 }
 
@@ -107,17 +108,17 @@ static int entt_read_ait(struct ifreq *req, struct entt_ioctl_ait_data *atomic_m
     ACCESS_LOCK;
     int rc = ioctl(sock, SIOCDEVPRIVATE_ENTT_READ_AIT, req);
     if (rc == -1) {
-        perror("SIOCDEVPRIVATE_ENTT_READ_AIT");
+        syslog(LOG_WARNING, "(%s) SIOCDEVPRIVATE_ENTT_READ_AIT: %m", machine_name);
     }
     else if (atomic_msg->message_len > 0) {
         // what if message_len >= MAX_AIT_MESSAGE_SIZE ??
         char buf[MAX_AIT_MESSAGE_SIZE];
         memset(buf, 0, MAX_AIT_MESSAGE_SIZE);
         memcpy(buf, atomic_msg->data, atomic_msg->message_len);
-        printf("entt_read_ait - interface: %s num_messages: %d, num_queued: %d, \"%s\"\n", req->ifr_name, atomic_msg->num_messages, atomic_msg->num_queued, buf);
+        syslog(LOG_INFO, "(%s) entt_read_ait - interface: %s num_messages: %d, num_queued: %d, \"%s\"\n", machine_name, req->ifr_name, atomic_msg->num_messages, atomic_msg->num_queued, buf);
     }
     else if ((atomic_msg->num_messages != 0) && (atomic_msg->num_queued != 0)) {
-        printf("entt_read_ait - interface: %s num_messages: %d, num_queued: %d\n", req->ifr_name, atomic_msg->num_messages, atomic_msg->num_queued);
+        syslog(LOG_INFO, "(%s) entt_read_ait - interface: %s num_messages: %d, num_queued: %d\n", machine_name, req->ifr_name, atomic_msg->num_messages, atomic_msg->num_queued);
     }
     ACCESS_UNLOCK;
     return rc;
@@ -131,10 +132,10 @@ static int entt_send_ait(struct ifreq *req, struct entt_ioctl_ait_data *atomic_m
     ACCESS_LOCK;
     int rc = ioctl(sock, SIOCDEVPRIVATE_ENTT_SEND_AIT, req);
     if (rc == -1) {
-        perror("SIOCDEVPRIVATE_ENTT_SEND_AIT");
+        syslog(LOG_WARNING, "(%s) SIOCDEVPRIVATE_ENTT_SEND_AIT: %m", machine_name);
     }
     else {
-        printf("entt_send_ait - interface: %s msg: \"%s\"\n", req->ifr_name, msg);
+        syslog(LOG_INFO, "(%s) entt_send_ait - interface: %s msg: \"%s\"\n", machine_name, req->ifr_name, msg);
     }
     ACCESS_UNLOCK;
     return rc;
@@ -151,10 +152,10 @@ static int entl_set_sigrcvr(struct ifreq *req, struct entl_ioctl_data *cdata, ch
     ACCESS_LOCK;
     int rc = ioctl(sock, SIOCDEVPRIVATE_ENTL_SET_SIGRCVR, req);
     if (rc == -1) {
-        perror("SIOCDEVPRIVATE_ENTL_SET_SIGRCVR");
+        syslog(LOG_WARNING, "(%s) SIOCDEVPRIVATE_ENTL_SET_SIGRCVR: %m", machine_name);
     }
     else {
-        printf("entl_set_sigrcvr - interface: %s pid: %d\n", req->ifr_name, pid);
+        syslog(LOG_NOTICE, "(%s) entl_set_sigrcvr - interface: %s pid: %d\n", machine_name, req->ifr_name, pid);
     }
     ACCESS_UNLOCK;
     return rc;
@@ -167,10 +168,10 @@ static int entl_rd_error(struct ifreq *req, struct entl_ioctl_data *cdata) {
     ACCESS_LOCK;
     int rc = ioctl(sock, SIOCDEVPRIVATE_ENTL_RD_ERROR, req);
     if (rc == -1) {
-        perror("SIOCDEVPRIVATE_ENTL_RD_ERROR");
+        syslog(LOG_WARNING, "(%s) SIOCDEVPRIVATE_ENTL_RD_ERROR: %m", machine_name);
     }
     else {
-        // printf("entl_rd_error - interface: %s\n", req->ifr_name);
+        // syslog(LOG_NOTICE, "(%s) entl_rd_error - interface: %s\n", machine_name, req->ifr_name);
     }
     ACCESS_UNLOCK;
     return rc;
@@ -183,11 +184,11 @@ static int entl_rd_current(struct ifreq *req, struct entl_ioctl_data *cdata) {
     ACCESS_LOCK;
     int rc = ioctl(sock, SIOCDEVPRIVATE_ENTL_RD_CURRENT, req);
     if (rc == -1) {
-        perror("SIOCDEVPRIVATE_ENTL_RD_CURRENT");
+        syslog(LOG_WARNING, "(%s) SIOCDEVPRIVATE_ENTL_RD_CURRENT: %m", machine_name);
     }
     else {
         // called periodically
-        // printf("entl_rd_current - interface: %s state: %d (%s)\n", req->ifr_name, cdata->state.current_state, str4code(cdata->state.current_state));
+        // syslog(LOG_INFO, "(%s) entl_rd_current - interface: %s state: %d (%s)\n", machine_name, req->ifr_name, cdata->state.current_state, str4code(cdata->state.current_state));
     }
     ACCESS_UNLOCK;
     return rc;
@@ -204,7 +205,7 @@ link_device_t links[NUM_INTERFACES];
 
 // get hardware state, post to server (ENTT_READ_AIT)
 static void entl_ait_sig_handler(int signum) {
-    printf("*** entl_ait_sig_handler signal: (%d) ***\n", signum);
+    syslog(LOG_NOTICE, "(%s) *** entl_ait_sig_handler signal: (%d) ***\n", machine_name, signum);
 
     if (signum != SIGUSR2) { return; }
 
@@ -217,17 +218,17 @@ static void entl_ait_sig_handler(int signum) {
         if (rc == -1) continue;
         if (atomic_msg->message_len == 0) continue;
 
-        printf("entl_ait_sig_handler - interface: %s message_len: %d\n", req->ifr_name, atomic_msg->message_len);
+        syslog(LOG_INFO, "(%s) entl_ait_sig_handler - interface: %s message_len: %d\n", machine_name, req->ifr_name, atomic_msg->message_len);
         memcpy(l->AITMessageR, atomic_msg->data, atomic_msg->message_len);
         toJSON(l);
         toServer(l->json);
-        printf("link state: %s", l->json);
+        syslog(LOG_INFO, "(%s) link state: %s", machine_name, l->json);
     }
 }
 
 // get hardware state, post to server (ENTL_RD_ERROR)
 void entl_error_sig_handler(int signum) {
-    printf("***  entl_error_sig_handler signal: (%d) ***\n", signum);
+    syslog(LOG_NOTICE, "(%s) ***  entl_error_sig_handler signal: (%d) ***\n", machine_name, signum);
 
     if (signum != SIGUSR1) { return; }
 
@@ -243,7 +244,7 @@ void entl_error_sig_handler(int signum) {
             l->linkState = cdata->link_state;
             toJSON(l);
             toServer(l->json);
-            printf("link state: %s", l->json);
+            syslog(LOG_INFO, "(%s) link state: %s", machine_name, l->json);
         }
     }
 }
@@ -264,7 +265,7 @@ static pthread_t read_thread;
 
 // worker thread : read from socket, entt_send_ait(port, msg)
 static void *read_task(void *me) {
-    printf( "read_task started\n");
+    syslog(LOG_INFO, "(%s) read_task started\n", machine_name);
 
     while (1) {
         if (!read_window()) { sleep(1); continue; }
@@ -289,7 +290,7 @@ static void *read_task(void *me) {
             char *port_id = port_name[i];
 
             if (!strcmp(port, port_id)) {
-                // printf("read_task - port: %s index: %d message: \"%s\"\n", port, i, message);
+                // syslog(LOG_INFO, "(%s) read_task - port: %s index: %d message: \"%s\"\n", machine_name, port, i, message);
                 entt_send_ait(req, atomic_msg, message);
                 break;
             }
@@ -310,7 +311,7 @@ static int open_socket() {
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) { perror("Can't create socket\n"); return sockfd; }
 
-    printf("connect port: %d\n", sin_port);
+    syslog(LOG_INFO, "(%s) connect port: %d\n", machine_name, sin_port);
     int st = connect(sockfd, (struct sockaddr *) &sockaddr, sizeof(struct sockaddr));
     if (st < 0) {
         perror("Can't bind socket");
@@ -328,7 +329,12 @@ int main (int argc, char **argv) {
         return -1;
     }
 
-    printf("Server Address: Machine Name: %s\n", argv[1]);
+    const char *ident = NULL; // argv[0]
+    int option = LOG_ODELAY|LOG_PID;
+    int facility = LOG_USER;
+    openlog(ident, option, facility);
+
+    syslog(LOG_INFO, "Server Address: Machine Name: %s\n", argv[1]);
     machine_name = argv[1];
 
     int sockfd = open_socket();
@@ -348,15 +354,15 @@ int main (int argc, char **argv) {
     }
 
     sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sock < 0) { perror("cannot create socket"); return 0; }
+    if (sock < 0) { perror("cannot create socket"); return -1; }
 
     signal(SIGUSR1, entl_error_sig_handler);
     signal(SIGUSR2, entl_ait_sig_handler);
 
     pid_t pid = getpid();
-    printf("pid : %d\n", pid);
+    syslog(LOG_INFO, "(%s) pid : %d\n", machine_name, pid);
 
-    printf("registering signal handlers\n");
+    syslog(LOG_INFO, "(%s) registering signal handlers\n", machine_name);
     for (int i = 0; i < NUM_INTERFACES; i++) {
         struct ifreq *req = &ifr[i];
         struct entl_ioctl_data *cdata = &entl_data[i];
@@ -373,10 +379,10 @@ int main (int argc, char **argv) {
     }
 
     int rc = pthread_create(&read_thread, NULL, read_task, NULL);
-    if (rc != 0) printf("pthread_create failed\n");
+    if (rc != 0) syslog(LOG_INFO, "(%s) pthread_create failed\n", machine_name);
 
     // loop : ENTL_RD_CURRENT, toServer
-    printf("update loop\n");
+    syslog(LOG_INFO, "(%s) update loop\n", machine_name);
     while (1) {
         for (int i = 0; i < NUM_INTERFACES; i++) {
             struct ifreq *req = &ifr[i];
@@ -401,5 +407,6 @@ int main (int argc, char **argv) {
     }
 
     // NOTREACHED
+    closelog();
     return 0;
 }
