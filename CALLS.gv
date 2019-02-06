@@ -1,0 +1,136 @@
+digraph G {
+    rankdir=LR
+    node [style=filled, fillcolor=cyan]
+
+    // adapter.c
+    main -> entl_ait_sig_handler // init (data)
+    main -> entl_error_sig_handler // init (data)
+    main -> entl_rd_current // toServer loop
+    main -> entl_rd_error // init
+    main -> entl_set_sigrcvr // init
+    main -> init_link // init
+    main -> open_socket // init
+    main -> read_task // init
+    // main -> toJSON // init
+    main -> toJSON // toServer loop
+    // main -> toServer // init
+    main -> toServer // toServer loop
+
+    entl_ait_sig_handler -> entt_read_ait
+    entl_error_sig_handler -> entl_rd_error
+    read_task -> entt_send_ait
+
+    entl_ait_sig_handler -> toJSON
+    entl_ait_sig_handler -> toServer
+    entl_error_sig_handler -> toJSON
+    entl_error_sig_handler -> toServer
+
+    { rank=same entl_rd_current entl_rd_error entl_set_sigrcvr entt_read_ait entt_send_ait }
+
+    entl_rd_current -> SIOCDEVPRIVATE_ENTL_RD_CURRENT
+    entl_rd_error -> SIOCDEVPRIVATE_ENTL_RD_ERROR
+    entl_set_sigrcvr -> SIOCDEVPRIVATE_ENTL_SET_SIGRCVR
+    entt_read_ait -> SIOCDEVPRIVATE_ENTT_READ_AIT
+    entt_send_ait -> SIOCDEVPRIVATE_ENTT_SEND_AIT
+
+    SIOCDEVPRIVATE_ENTT_SEND_AIT -> wire
+    SIOCDEVPRIVATE_ENTT_READ_AIT -> wire
+
+    // conduits
+    wire [fillcolor=red]
+    port_1337 [fillcolor=red]
+    port_3000 [fillcolor=red]
+    last_ait [fillcolor=red]
+    cellAgentLog [fillcolor=red]
+    trace_data [fillcolor=red]
+    routing_table [fillcolor=red]
+    frame_seq [fillcolor=red]
+
+    // topics
+    global_state [fillcolor=yellow]
+    earth_update [fillcolor=yellow]
+    cellagent_update [fillcolor=yellow]
+    aitMessage [fillcolor=yellow]
+
+
+    read_task -> read_window
+    toJSON -> str4code
+
+    toServer -> port_1337 // write port: 1337
+    read_window -> port_1337 // read port: 1337
+
+    node [style=filled, fillcolor=green]
+
+    // eccf-server.js
+    connectionListener -> port_1337 // port: 1337
+    connectionListener -> receiveListener
+    receiveListener -> earth_update // io.emit('earth-update'
+
+    eccf_server -> post // init
+    eccf_server -> get // init
+    eccf_server -> connectionListener // init
+
+    get -> port_3000
+    post -> port_3000
+    get -> last_ait
+    post ->  adapterWrite
+    post ->  cellAgentUpdate
+
+    adapterWrite -> aitMessage
+    adapterWrite -> last_ait
+    adapterWrite -> port_1337
+    cellAgentUpdate -> cellagent_update
+
+    node [style=filled, fillcolor=magenta]
+
+    // cell-ui.html
+    browser -> processPacket // init
+    browser -> processCellAgent //init
+    browser -> sendButton // init
+
+    processPacket -> earth_update
+    processPacket -> recv
+    recv -> cellAgentLog
+
+    processCellAgent -> cellagent_update
+    processCellAgent -> xmit
+    xmit -> cellAgentLog
+
+    sendButton -> sendPacket
+    sendPacket -> AITMsgBody
+    sendPacket -> aitMessage
+
+    node [style=filled, fillcolor=pink]
+
+    post_frame -> frame_seq
+    post_frame -> process_file_frames
+    process_file_frames -> post_form
+    post_form ->  port_3000
+
+    node [style=filled, fillcolor=purple]
+
+    analyze -> trace_data
+    analyze -> process_file
+    process_file -> global_state
+    do_analyze -> global_state
+    do_analyze -> dispatch
+    dispatch -> ipc_pe_recv // packet_engine.rs$$listen_cm_loop$$Trace$$recv
+    ipc_pe_recv -> pe_api
+
+    pe_api -> xmit_eccf_frame // CmToPePacket::Packet
+    pe_api -> xmit_tcp_frame // Tcp
+    pe_api -> routing_table // Entry
+
+    xmit_eccf_frame -> eccf_normal
+    xmit_eccf_frame -> eccf_ait
+
+    eccf_normal -> phy_enqueue // Leafward or RootWard or fallsthru ??
+    eccf_ait -> phy_enqueue
+    xmit_tcp_frame -> phy_enqueue
+
+    phy_enqueue -> frame_seq
+
+    node [style=filled, fillcolor=blue]
+
+    modeler -> trace_data
+}
