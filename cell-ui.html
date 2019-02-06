@@ -374,6 +374,7 @@ var processPacket = (function() {
             $('#recv_' + port).css({ 'background-color': 'pink' });
             setTimeout(function() { $('#recv_' + port).css({ 'background-color': 'transparent' }); }, 1500);
             p_messages[port] = msg;
+            recv(port, msg) // append to log
         }
     };
 })();
