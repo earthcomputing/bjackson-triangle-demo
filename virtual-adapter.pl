@@ -113,12 +113,22 @@ sub read_loop {
 
         next unless $dest =~ m/C(\d)p(\d)/;
         my ($n_cell, $n_port) = ($1, $2);
-        # my $n_sock = $cell_map->{'C:'.$n_cell};
-        my $url = api('C:'.$n_cell, $n_port);
+        my $pe_id = 'C:'.$n_cell;
+        my $nick = $nicknames->{$pe_id};
+        # my $n_sock = $cell_map->{$pe_id};
+        # my $url = api($pe_id, $n_port);
+        # print(join(' ', 'DEBUG:', $cell, $port, $n_cell, $n_port, $pe_id, $nick, $n_sock, $url), $endl);
 
-        my $o = '';
+        my $o = {
+            pe_id => $pe_id,
+            inbound => $n_port,
+            machineName => $nick,
+            xmit_now => $now,
+            msg_type => $msg
+        };
+        cross_read($o);
 
-        print(join(' ', $cell, $port, $link, $dest, $n_cell, $n_port, $url, $now, $msg), $endl);
+        print(join(' ', $link, $dest, $now, $msg), $endl);
 
         $data = $now." ok".$endl;
         $csock->send($data);
@@ -171,27 +181,27 @@ sub api {
     return undef if $port > @{$port_map};
 
     my $port_id = $port_map->[$port - 1]; # adjust index, 0 is cell-agent
-    my $url = 'http://'.$ip_endpoint.'/port/'.$port_id;
+    my $url = 'http://'.$ip_endpoint.'/backdoor/'.$port_id;
     return $url;
 }
 
 sub cross_read {
     my ($o) = @_;
     my $cell_id = $o->{pe_id};
-    my $port = $o->{outbound};
+    my $port = $o->{inbound};
     my $nick = $nicknames->{$cell_id}; $nick = '' unless defined $nick;
     $o->{nickname} = $nick;
-    print(join(' ', '   ', 'phy enqueue',
+
+    print(join(' ', '   ', 'phy dequeue',
         $o->{nickname}, $cell_id, $port,
-        $o->{ait_code}, $o->{tree}, $o->{msg_type}, 'msg_id='.$o->{msg_id},
-        substr($o->{frame}, 0, 10).'...',
+        $o->{xmit_now}, $o->{msg_type},
         '; '
     ));
 
     my $url = api($cell_id, $port);
     unless (defined $url) {
         print($endl, join(' ', 'skipping -', $nick, 'cell:', $cell_id, 'port:', $port), $endl);
-        next;
+        return;
     }
     print($url, ' ');
     my $response = $ua->post_form($url, $o);
