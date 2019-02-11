@@ -53,7 +53,7 @@ foreach my $arg (@ARGV) {
     process_arg($arg);
 }
 
-sub process_arg {
+sub process_arg_server {
     my ($arg) = @_;
     my ($host, $port) = split(':', $arg);
 
@@ -81,17 +81,41 @@ sub process_arg {
     $socket->close();
 }
 
+sub process_arg {
+    my ($arg) = @_;
+    my ($host, $port) = split(':', $arg);
+
+    my $socket = new IO::Socket::INET (
+        PeerHost => $host,
+        PeerPort => $port,
+        Proto => 'tcp'
+    );
+
+    die 'cannot create socket'.$! unless $socket;
+    my $c_address = $socket->sockaddr();
+    my $c_port = $socket->sockport();
+    print(join(' ', 'connection from', $c_address.':'.$c_port), $endl);
+    print(join(' ', 'connection to', $arg), $endl);
+
+    read_loop($socket);
+}
+
 sub read_loop {
     my ($csock) = @_;
     my $cell = cell_id($machine_name);
 
+    print(join(' ', 'emulating phy', $machine_name, $cell), $endl);
+
     my $data = '';
-    while (1) {
-        my $buf = <$csock>; # $csock->recv($buf, 1024);
+    while ($csock->connected()) {
+        my $buf = '';
+        # my $buf = <$csock>;
+        $csock->recv($buf, 1024);
         # print(Dumper($buf), $endl);
+        return unless defined $csock->connected(); # might be much, much later
         return unless $buf;
         chomp($buf);
-        print($buf, $endl);
+        print($buf, $endl) if $buf;
         $data .= $buf;
 
         my $json;
@@ -106,18 +130,21 @@ sub read_loop {
 
         my $port_id = $json->{port};
         my $msg = $json->{message};
+        # print(join(' ', 'DEBUG:', $port_id, $msg), $endl);
+
         my $port = invert_port($port_id);
         my $cid = $cell; $cid =~ s/C://;
-        my $link = 'C'.$cid.'p'.($port+1);
-        my $dest = $channel_map->{$link};
+        my $endpoint = 'C'.$cid.'p'.($port+1);
+        my ($dest, $bias) = find_chan($endpoint);
+        print(join(' ', 'DEBUG:', $port, $cid, $endpoint, $dest), $endl) unless defined $dest;
 
         next unless $dest =~ m/C(\d)p(\d)/;
         my ($n_cell, $n_port) = ($1, $2);
         my $pe_id = 'C:'.$n_cell;
         my $nick = $nicknames->{$pe_id};
-        # my $n_sock = $cell_map->{$pe_id};
-        # my $url = api($pe_id, $n_port);
-        # print(join(' ', 'DEBUG:', $cell, $port, $n_cell, $n_port, $pe_id, $nick, $n_sock, $url), $endl);
+        my $n_sock = $cell_map->{$pe_id};
+        my $url = api($pe_id, $n_port);
+        # print(join(' ', 'DEBUG:', $n_cell, $n_port, $pe_id, $nick, $n_sock, $url), $endl);
 
         my $o = {
             pe_id => $pe_id,
@@ -128,10 +155,10 @@ sub read_loop {
         };
         cross_read($o);
 
-        print(join(' ', $link, $dest, $now, $msg), $endl);
+        print(join(' ', $endpoint, $dest, $bias, $now, $msg), $endl);
 
         $data = $now." ok".$endl;
-        $csock->send($data);
+        # $csock->send($data); ## when debugging - echo input
     }
 }
 
@@ -147,6 +174,18 @@ sub invert_port {
     my ($port_id) = @_;
     foreach my $i (0 .. @{$port_map}) {
         return $i if $port_id eq $port_map->[$i];
+    }
+    return undef;
+}
+
+sub find_chan {
+    my ($endpoint) = @_;
+    my $fw = $channel_map->{$endpoint};
+    return ($fw, 'forward')  if defined $fw;
+
+    foreach my $k (keys %{$channel_map}) {
+        my $bw = $channel_map->{$k};
+        return ($k, 'backward') if $bw eq $endpoint
     }
     return undef;
 }
