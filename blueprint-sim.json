@@ -8,7 +8,8 @@
     "cells": {
         "C:0": "localhost:3000",
         "C:1": "localhost:3001",
-        "C:2": "localhost:3002"
+        "C:2": "localhost:3002", 
+        "C:3": "localhost:3003"
     },
     "nicknames": {
         "C:0": "Alice",
