@@ -39,12 +39,15 @@ open ${dir}/alice-eccf.command
 open ${dir}/bob-eccf.command
 open ${dir}/carol-eccf.command
 
-sleep 5
+sleep 3
 
 open ${dir}/alice-adapt.command
 open ${dir}/bob-adapt.command
 open ${dir}/carol-adapt.command
 
 open ${dir}/simulated-triangle-demo.html
-open ${dir}/poster.command
 
+# need a delay here for browser network connections
+sleep 3
+
+open ${dir}/poster.command
