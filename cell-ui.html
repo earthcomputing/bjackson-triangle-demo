@@ -102,6 +102,7 @@ outbound: <input id='AITMsgBody' class='med'/>
  
 <!-- injected operation -->
 <div id='cellAgentRecv' class='frame'> ABCD </div>
+<div id='backdoorRecv' class='frame'> ABCD </div>
 
 <script>
 $("#tabs").tabs();
@@ -369,6 +370,8 @@ var processPacket = (function() {
 
         $('#svg_' + port + ' circle').css({ fill: clr }); // d3.select('#svg_'+port+' circle').style('fill', clr );
 
+// FIXME: suppresses duplicates ??
+
         if (p_messages[port] != msg) {
             $('#recvBody_' + port).html(msg);
             $('#recv_' + port).css({ 'background-color': 'pink' });
@@ -390,6 +393,35 @@ function dumper(frame) {
     }
     return str;
 }
+
+var processBackdoor = (function() {
+    return function(msg) {
+        console.log('backdoor-update:', machineName, msg);
+        var nickname = msg.nickname;
+        if (machineName != nickname) return;
+
+        // var device_id = req.params.port_id;
+        var cell_id = msg.pe_id;
+        var port = msg.inbound;
+        var epoch = msg.xmit_now;
+        var msg_type = msg.msg_type;
+
+        var content = '<b class="med">'
+                + '<p/>'
+            + '<br/>' + msg_type
+            + '<br/>' + ' port: ' + port
+            + '<br/>' + ' epoch: ' + epoch
+                + '</b>'
+                + '<p/>'
+            + '<br/>' + ' cell_id: ' + cell_id
+            + '<br/>' + ' nickname: ' + nickname
+            + '<br/>' + ' machineName: ' + machineName
+        ;
+        $('#backdoorRecv').html(content);
+
+        recv(port, msg_type);
+    };
+})();
 
 var processCellAgent = (function() {
     return function(msg) {
@@ -458,6 +490,12 @@ var socket = io();
 socket.on('earth-update', function(data) {
     data = JSON.parse(data.toString()); // why?
     processPacket(data);
+});
+
+// backdoor-update
+socket.on('backdoor-update', function(data) {
+    // data = JSON.parse(data.toString()); // why not?
+    processBackdoor(data);
 });
 
 // cellagent-update { port tree frame }
