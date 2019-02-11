@@ -27,9 +27,9 @@ echo 'nodejs '${wdir}/'eccf-server.js Alice 3000 1337' > ${dir}/alice-eccf.comma
 echo 'nodejs '${wdir}/'eccf-server.js Bob   3001 1338' > ${dir}/bob-eccf.command
 echo 'nodejs '${wdir}/'eccf-server.js Carol 3002 1339' > ${dir}/carol-eccf.command
 
-echo 'telnet localhost 1337' > ${dir}/alice-adapt.command
-echo 'telnet localhost 1338' > ${dir}/bob-adapt.command
-echo 'telnet localhost 1339' > ${dir}/carol-adapt.command
+echo 'cd '${wdir}'; ./virtual-adapter.pl -config=blueprint-sim.json -machine=Alice localhost:1337' > ${dir}/alice-adapt.command
+echo 'cd '${wdir}'; ./virtual-adapter.pl -config=blueprint-sim.json -machine=Bob localhost:1338' > ${dir}/bob-adapt.command
+echo 'cd '${wdir}'; ./virtual-adapter.pl -config=blueprint-sim.json -machine=Carol localhost:1339' > ${dir}/carol-adapt.command
 
 echo 'cd '${wdir}'; ./post-frame.pl -config=blueprint-sim.json -delay=1 ' ${frames} > ${dir}/poster.command
 
