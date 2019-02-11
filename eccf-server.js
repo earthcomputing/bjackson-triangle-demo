@@ -59,12 +59,14 @@ app.get('/ports', function (req, res) {
 // http://localhost:3000/port/3
 // http://localhost:3000/port/enp6s0
 app.all('/port/:port_id', function (req, res, next) {
+    var port = req.params.port_id;
     if (config.verbose) console.log('port ...', req.method, req.url, req.params);
     next();
 })
 
 // virtual 'recv' on link
 app.post('/backdoor/:port_id', function (req, res) {
+    var port = req.params.port_id;
     backdoorUpdate(req.body);
     if (config.verbose) console.log('POST backdoor ...',
         '\nheaders:', req.headers,
@@ -75,7 +77,6 @@ app.post('/backdoor/:port_id', function (req, res) {
 
     var machineName = req.body.nickname;
     var pe_id = req.body.pe_id;
-    var port = req.params.port_id;
     var inbound = req.body.inbound;
     var xmit_now = req.body.xmit_now;
     var msg_type = req.body.msg_type;
@@ -96,13 +97,13 @@ app.post('/backdoor/:port_id', function (req, res) {
 });
 
 app.post('/route/:port_id', function (req, res) {
+    var port = req.params.port_id;
     // routeUpdate(req.body);
     if (config.verbose) console.log('POST route ...',
         '\nheaders:', req.headers,
         '\nbody:', req.body
     );
 
-    var port = req.params.port_id;
     var redirect = req.body.alt_route;
     if (config.trunc != 0) { console.log('POST', 'route', 'port:', port, 'redirect', redirect); }
 
@@ -111,6 +112,7 @@ app.post('/route/:port_id', function (req, res) {
 });
 
 app.post('/port/:port_id', function (req, res) {
+    var port = req.params.port_id;
     cellAgentUpdate(req.body);
     // ugh, hack req frame for debug output
     var frame = req.body.frame;
@@ -121,7 +123,6 @@ app.post('/port/:port_id', function (req, res) {
     );
 
     var host = req.body.pe_id;
-    var port = req.params.port_id;
     var msg_type = req.body.msg_type;
     if (config.trunc != 0) { console.log('POST', msg_type, 'port:', port, 'frame:', frame.substr(config.trunc)); }
 
@@ -152,8 +153,9 @@ function cellAgentUpdate(d) {
 }
 
 app.get('/port/:port_id', function (req, res) {
+    var port = req.params.port_id;
     if (config.verbose) console.log('GET port ...', req.params);
-    var message = last_ait[req.params.port_id];
+    var message = last_ait[port];
     res.send('GET port ...' + JSON.stringify(req.params) + message);
 });
 
@@ -250,20 +252,23 @@ var receiveListener = function (data) {
 };
 
 // fudge things here:
+// { AITMessage, deviceName }
 var echoServer = function(obj) {
     var msg_type = obj.AITMessage;
+    var deviceName = obj.deviceName;
 
     if (msg_type.slice(0, 4) != 'ECHO') { return; }
+
+console.log('echo', 'from', deviceName);
 
     // fudge things here when route-repair:
     // jigger 'port' based upon routing table
 
-    var deviceName = obj.deviceName;
     // mini routing table here
     var port = 0;
 
     // automated response:
-    adapterWrite(port, 'R' + msg_type);
+    adapterWrite(deviceName, 'R' + msg_type);
 };
 
 var connectionListener = function (socket) {
