@@ -6,6 +6,8 @@ if (process.argv.length <= 2) {
     process.exit(-1);
 }
  
+// var console = require('syslog-console')('eccf-server');
+
 const hostname = process.argv[2];
 const s_port = (process.argv.length > 3) ? process.argv[3] : 3000;
 const c_port = (process.argv.length > 4) ? process.argv[4] : 1337;
@@ -15,6 +17,7 @@ console.log('hostname:', hostname, s_port, c_port);
 var last_ait = {};
 var last_state = {};
 var json_data = {};
+var alt_route = {};
 var connected = 0;
 var c_socket;
 
@@ -60,18 +63,73 @@ app.all('/port/:port_id', function (req, res, next) {
     next();
 })
 
+// virtual 'recv' on link
+app.post('/backdoor/:port_id', function (req, res) {
+    backdoorUpdate(req.body);
+    if (config.verbose) console.log('POST backdoor ...',
+        '\nheaders:', req.headers,
+        '\nbody:', req.body
+    );
+
+// FIXME : crossing streams here - 
+
+    var machineName = req.body.nickname;
+    var pe_id = req.body.pe_id;
+    var port = req.params.port_id;
+    var inbound = req.body.inbound;
+    var xmit_now = req.body.xmit_now;
+    var msg_type = req.body.msg_type;
+
+    if (config.trunc != 0) { console.log('POST', xmit_now, msg_type, 'port:', port); }
+
+    var obj = {
+        AITMessage : msg_type,
+        deviceName : port
+    };
+
+    echoServer(obj);
+
+    // previous state:
+    // json_data[obj.machineName][obj.deviceName] = json_txt;
+
+    res.send('POST backdoor ...' + JSON.stringify(req.params));
+});
+
+app.post('/route/:port_id', function (req, res) {
+    // routeUpdate(req.body);
+    if (config.verbose) console.log('POST route ...',
+        '\nheaders:', req.headers,
+        '\nbody:', req.body
+    );
+
+    var port = req.params.port_id;
+    var redirect = req.body.alt_route;
+    if (config.trunc != 0) { console.log('POST', 'route', 'port:', port, 'redirect', redirect); }
+
+    alt_route[port] = redirect;
+    res.send('POST route ...' + JSON.stringify(req.params));
+});
+
 app.post('/port/:port_id', function (req, res) {
     cellAgentUpdate(req.body);
+    // ugh, hack req frame for debug output
     var frame = req.body.frame;
     req.body.frame = null;
     if (config.verbose) console.log('POST port ...',
         '\nheaders:', req.headers,
         '\nbody:', req.body
     );
+
     var host = req.body.pe_id;
     var port = req.params.port_id;
     var msg_type = req.body.msg_type;
     if (config.trunc != 0) { console.log('POST', msg_type, 'port:', port, 'frame:', frame.substr(config.trunc)); }
+
+    // fudge things here when route-repair:
+    if (msg_type.slice(0, 4) == 'ECHO') {
+        // jigger 'port' based upon routing table
+    }
+
     adapterWrite(port, msg_type);
     res.send('POST port ...' + JSON.stringify(req.params));
 });
@@ -81,7 +139,13 @@ function adapterWrite(port, message) {
     c_socket.write('{ \"port\": \"' + port + '\", \"message\":\"' + message + '\" }')
 }
 
-// cellagent-update
+// backdoor-update - share with visualizers:
+function backdoorUpdate(d) {
+    if (config.verbose) console.log('backdoor-update:', d);
+    io.emit('backdoor-update', d); // earth-update
+}
+
+// cellagent-update - share with visualizers
 function cellAgentUpdate(d) {
     if (config.verbose) console.log('cellagent-update:', d);
     io.emit('cellagent-update', d);
@@ -133,9 +197,9 @@ var data = {
     "AITMessage" : "-none-"
 };
 
-// update function for earth-connect update
-function earthUpdate(socket, data) {
-    console.log(data);
+// earth-update - share with visualizers
+function earthUpdate(data) {
+    if (config.verbose) console.log(data);
     io.emit("earth-update", data);
 }
 
@@ -150,15 +214,19 @@ var receiveListener = function (data) {
         var json_txt = lines[i];
         if (isBlank(json_txt)) continue;
 
+        // frame arrived
         try {
             var obj = JSON.parse(json_txt);
             if (!obj) continue;
+
+// backdoor mimics this:
 
             if (config.periodic) console.log( "entlCount:", obj.entlCount);
 
             // not checked against hostname
             if (!obj.machineName) continue;
             if (!obj.deviceName) continue;
+
             if (!json_data[obj.machineName]) { json_data[obj.machineName] = {}; }
             json_data[obj.machineName][obj.deviceName] = json_txt;
 
@@ -169,12 +237,33 @@ var receiveListener = function (data) {
 
             // I/O to spinner
             if (!connected) continue;
+
+            // inline rather than earthUpdate()
             io.emit('earth-update', json_txt);
             if (toggled || config.periodic) console.log('earth-update ' + json_txt);
+
+            echoServer(obj);
         } catch(e) {
             console.log('error:' + e);
         }
     }
+};
+
+// fudge things here:
+var echoServer = function(obj) {
+    var msg_type = obj.AITMessage;
+
+    if (msg_type.slice(0, 4) != 'ECHO') { return; }
+
+    // fudge things here when route-repair:
+    // jigger 'port' based upon routing table
+
+    var deviceName = obj.deviceName;
+    // mini routing table here
+    var port = 0;
+
+    // automated response:
+    adapterWrite(port, 'R' + msg_type);
 };
 
 var connectionListener = function (socket) {
