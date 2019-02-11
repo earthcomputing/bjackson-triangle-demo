@@ -118,6 +118,9 @@ sub read_loop {
         print($buf, $endl) if $buf;
         $data .= $buf;
 
+        # huh ??
+        next if $data eq '';
+
         my $json;
         eval { $json = decode_json($data); };
         next unless defined $json;
@@ -130,13 +133,13 @@ sub read_loop {
 
         my $port_id = $json->{port};
         my $msg = $json->{message};
-        # print(join(' ', 'DEBUG:', $port_id, $msg), $endl);
+        # print(join(' ', 'DEBUG:', $port_id, $msg, $dquot.$data.$dquot, Dumper $json), $endl);
 
         my $port = invert_port($port_id);
         my $cid = $cell; $cid =~ s/C://;
         my $endpoint = 'C'.$cid.'p'.($port+1);
         my ($dest, $bias) = find_chan($endpoint);
-        print(join(' ', 'DEBUG:', $port, $cid, $endpoint, $dest), $endl) unless defined $dest;
+        # print(join(' ', 'DEBUG:', $port, $cid, $endpoint, $dest), $endl) unless defined $dest;
 
         next unless $dest =~ m/C(\d)p(\d)/;
         my ($n_cell, $n_port) = ($1, $2);
@@ -172,9 +175,11 @@ sub cell_id {
 
 sub invert_port {
     my ($port_id) = @_;
-    foreach my $i (0 .. @{$port_map}) {
-        return $i if $port_id eq $port_map->[$i];
+    foreach my $i (0..@{$port_map}) {
+        my $value = $port_map->[$i];
+        return $i if $port_id eq $value;
     }
+    print(join(' ', 'invert_port', 'not found:', $port_id), $endl);
     return undef;
 }
 
@@ -262,13 +267,26 @@ my $notes = << '_eof_';
 # --
 
 # poster:
-phy enqueue Carol C:2 2 NORMAL 0x4000e4c0929a46ad82438ab8b0629b5d Application msg_id=171641756590852295 7b226d7367... ; http://localhost:3002/port/enp8s0 status=200
+    phy enqueue Carol C:2 2 NORMAL 0x4000e4c0929a46ad82438ab8b0629b5d ECHO msg_id=171641756590852295 7b226d7367... ; http://localhost:3002/port/enp8s0 status=200
 
-# server:
-POST Application port: enp8s0 frame: 303632396235645c227d7d7d7d227d
+# Carol server:
+POST ECHO port: enp8s0 frame: 303632396235645c227d7d7d7d227d
 
-# adapter:
-{ "port": "enp8s0", "message":"Application" }
+# Carol adapter:
+{ "port": "enp8s0", "message":"ECHO" }
+    phy dequeue Bob C:1 3 1549877688620301 ECHO ; http://localhost:3001/backdoor/enp9s0 status=200
+C2p2 C1p3 backward 1549877688620301 ECHO
+
+# Bob server (backdoor):
+POST 1549877688620301 ECHO port: enp9s0
+
+# Bob adapter:
+{ "port": "enp9s0", "message":"RECHO" }
+    phy dequeue Carol C:2 2 1549879988960506 RECHO ; http://localhost:3002/backdoor/enp8s0 status=200
+C1p3 C2p2 forward 1549879988960506 RECHO
+
+# Carol server:
+POST 1549879988960506 RECHO port: enp8s0
 
 # --
 
