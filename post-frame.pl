@@ -57,6 +57,12 @@ sub process_file {
         my $json_text = $_;
         my $o = decode_json($json_text);
 
+# bogus records
+unless (defined $o->{outbound}) {
+    print(join(' ', 'BAD RECORD', $o->{epoch}, $o->{pe_id}, 'null', $o->{tree}, $o->{msg_type}), $endl);
+    $o->{outbound} = -1;
+}
+
         my $cell_id = $o->{pe_id};
         my $port = $o->{outbound};
         my $nick = $nicknames->{$cell_id}; $nick = '' unless defined $nick;
