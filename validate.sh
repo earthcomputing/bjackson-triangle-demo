@@ -23,13 +23,22 @@ cat > ${dir}/simulated-triangle-demo.html << 'EOF'
 </frameset>
 'EOF'
 
-echo 'nodejs '${wdir}/'eccf-server.js Alice 3000 1337' > ${dir}/alice-eccf.command
-echo 'nodejs '${wdir}/'eccf-server.js Bob   3001 1338' > ${dir}/bob-eccf.command
-echo 'nodejs '${wdir}/'eccf-server.js Carol 3002 1339' > ${dir}/carol-eccf.command
+# set position and logical size
+echo "printf '\e[3;0;0t' ; printf '\e[8;15;95t'" > ${dir}/alice-eccf.command
+echo "printf '\e[3;0;250t' ; printf '\e[8;15;95t'" > ${dir}/bob-eccf.command
+echo "printf '\e[3;0;500t' ; printf '\e[8;15;95t'" > ${dir}/carol-eccf.command
 
-echo 'cd '${wdir}'; ./virtual-adapter.pl -config=blueprint-sim.json -machine=Alice localhost:1337' > ${dir}/alice-adapt.command
-echo 'cd '${wdir}'; ./virtual-adapter.pl -config=blueprint-sim.json -machine=Bob localhost:1338' > ${dir}/bob-adapt.command
-echo 'cd '${wdir}'; ./virtual-adapter.pl -config=blueprint-sim.json -machine=Carol localhost:1339' > ${dir}/carol-adapt.command
+echo "printf '\e[3;700;0t' ; printf '\e[8;15;95t'" > ${dir}/alice-adapt.command
+echo "printf '\e[3;700;250t' ; printf '\e[8;15;95t'" > ${dir}/bob-adapt.command
+echo "printf '\e[3;700;500t' ; printf '\e[8;15;95t'" > ${dir}/carol-adapt.command
+
+echo 'nodejs '${wdir}/'eccf-server.js Alice 3000 1337' >> ${dir}/alice-eccf.command
+echo 'nodejs '${wdir}/'eccf-server.js Bob   3001 1338' >> ${dir}/bob-eccf.command
+echo 'nodejs '${wdir}/'eccf-server.js Carol 3002 1339' >> ${dir}/carol-eccf.command
+
+echo 'cd '${wdir}'; ./virtual-adapter.pl -config=blueprint-sim.json -machine=Alice localhost:1337' >> ${dir}/alice-adapt.command
+echo 'cd '${wdir}'; ./virtual-adapter.pl -config=blueprint-sim.json -machine=Bob localhost:1338' >> ${dir}/bob-adapt.command
+echo 'cd '${wdir}'; ./virtual-adapter.pl -config=blueprint-sim.json -machine=Carol localhost:1339' >> ${dir}/carol-adapt.command
 
 echo 'cd '${wdir}'; ./post-frame.pl -config=blueprint-sim.json -delay=1 ' ${frames} > ${dir}/poster.command
 
