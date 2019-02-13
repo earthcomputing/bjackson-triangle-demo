@@ -100,6 +100,7 @@ sub process_arg {
     print(join(' ', 'connection from', $c_address.':'.$c_port), $endl);
     print(join(' ', 'connection to', $arg), $endl);
 
+    ## $socket->disable_timeout; ## DANGER!
     read_loop($socket);
 }
 
@@ -126,6 +127,7 @@ sub read_loop {
 
         my $json;
         eval { $json = decode_json($data); };
+        print('ERROR: bad decode='.$data, $endl) unless defined $json;
         next unless defined $json;
         $data = '';
 
@@ -145,6 +147,7 @@ sub read_loop {
         print(join(' ', 'DEBUG:', $port, $cid, $endpoint, $dest, $bias), $endl) unless defined $dest;
         print(join(' ', 'DEBUG:', $port, $cid, $endpoint, $dest, $bias), $endl) if $DEBUG;
 
+        print('ERROR: dest='.$dest, $endl) unless $dest =~ m/C(\d)p(\d)/;
         next unless $dest =~ m/C(\d)p(\d)/;
         my ($n_cell, $n_port) = ($1, $2);
         my $pe_id = 'C:'.$n_cell;
