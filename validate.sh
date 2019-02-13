@@ -40,7 +40,8 @@ echo 'cd '${wdir}'; ./virtual-adapter.pl -config=blueprint-sim.json -machine=Ali
 echo 'cd '${wdir}'; ./virtual-adapter.pl -config=blueprint-sim.json -machine=Bob localhost:1338' >> ${dir}/bob-adapt.command
 echo 'cd '${wdir}'; ./virtual-adapter.pl -config=blueprint-sim.json -machine=Carol localhost:1339' >> ${dir}/carol-adapt.command
 
-echo 'cd '${wdir}'; ./post-frame.pl -config=blueprint-sim.json -delay=1 ' ${frames} > ${dir}/poster.command
+echo "printf '\e[3;0;700t' ; printf '\e[8;9;175t'" > ${dir}/poster.command
+echo 'cd '${wdir}'; ./post-frame.pl -config=blueprint-sim.json -delay=1 ' ${frames} >> ${dir}/poster.command
 
 chmod +x ${dir}/*.command
 
