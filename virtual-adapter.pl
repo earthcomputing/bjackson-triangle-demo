@@ -27,6 +27,7 @@ my $ua = HTTP::Tiny->new;
 my $endl = "\n";
 my $dquot = '"';
 my $blank = ' ';
+my $leading = '   ';
 
 $|++; # autoflush
 
@@ -134,7 +135,7 @@ sub read_loop {
 # --
 
         my $port_id = $json->{port};
-        my $msg = $json->{message};
+        my $msg = $now.' '.$json->{message};
         print(join(' ', 'DEBUG:', $port_id, $msg, $dquot.$data.$dquot, Dumper $json), $endl) if $DEBUG;
 
         my $port = invert_port($port_id);
@@ -161,7 +162,7 @@ sub read_loop {
         };
         cross_read($o);
 
-        print(join(' ', $endpoint, $dest, $bias, $now, $msg), $endl);
+        print(join(' ', $leading, $endpoint, $dest, $bias, $now, $dquot.$msg.$dquot), $endl);
 
         # my $hdx = $now." ok".$endl;
         # $csock->send($hdx); ## when debugging - echo input
@@ -182,7 +183,7 @@ sub invert_port {
         my $value = $port_map->[$i];
         return $i if $port_id eq $value;
     }
-    print(join(' ', 'invert_port', 'not found:', $port_id), $endl);
+    print(join(' ', 'DEBUG', 'invert_port', 'not found:', $port_id), $endl);
     return undef;
 }
 
@@ -239,9 +240,9 @@ sub cross_read {
     my $nick = $nicknames->{$cell_id}; $nick = '' unless defined $nick;
     $o->{nickname} = $nick;
 
-    print(join(' ', '   ', 'phy dequeue',
+    print(join(' ', $leading, 'phy enqueue',
         $o->{nickname}, $cell_id, $port,
-        $o->{xmit_now}, $o->{msg_type},
+        $o->{xmit_now}, $dquot.$o->{msg_type}.$dquot,
         '; '
     ));
 
@@ -270,26 +271,11 @@ my $notes = << '_eof_';
 # --
 
 # poster:
-    phy enqueue Carol C:2 2 NORMAL 0x4000e4c0929a46ad82438ab8b0629b5d ECHO msg_id=171641756590852295 7b226d7367... ; http://localhost:3002/port/enp8s0 status=200
-
 # Carol server:
-POST ECHO port: enp8s0 frame: 303632396235645c227d7d7d7d227d
-
 # Carol adapter:
-{ "port": "enp8s0", "message":"ECHO" }
-    phy dequeue Bob C:1 3 1549877688620301 ECHO ; http://localhost:3001/backdoor/enp9s0 status=200
-C2p2 C1p3 backward 1549877688620301 ECHO
-
 # Bob server (backdoor):
-POST 1549877688620301 ECHO port: enp9s0
-
 # Bob adapter:
-{ "port": "enp9s0", "message":"RECHO" }
-    phy dequeue Carol C:2 2 1549879988960506 RECHO ; http://localhost:3002/backdoor/enp8s0 status=200
-C1p3 C2p2 forward 1549879988960506 RECHO
-
 # Carol server:
-POST 1549879988960506 RECHO port: enp8s0
 
 # --
 
