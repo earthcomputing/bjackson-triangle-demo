@@ -81,13 +81,14 @@ app.post('/backdoor/:port_id', function (req, res) {
     var xmit_now = req.body.xmit_now;
     var msg_type = req.body.msg_type;
 
-    if (config.trunc != 0) { console.log('POST', xmit_now, msg_type, 'port:', port); }
+    if (config.trunc != 0) { console.log('recv', 'POST', xmit_now, msg_type, 'port:', port, 'hint:', hint(port)); }
 
     var obj = {
         AITMessage : msg_type,
         deviceName : port
     };
 
+    fakeDequeue(obj);
     echoServer(obj);
 
     // previous state:
@@ -105,7 +106,7 @@ app.post('/route/:port_id', function (req, res) {
     );
 
     var redirect = req.body.alt_route;
-    if (config.trunc != 0) { console.log('POST', 'route', 'port:', port, 'redirect', redirect); }
+    if (config.trunc != 0) { console.log('route', 'POST', 'port:', port, 'redirect', redirect); }
 
     alt_route[port] = redirect;
     res.send('POST route ...' + JSON.stringify(req.params));
@@ -124,7 +125,15 @@ app.post('/port/:port_id', function (req, res) {
 
     var host = req.body.pe_id;
     var msg_type = req.body.msg_type;
-    if (config.trunc != 0) { console.log('POST', msg_type, 'port:', port, 'frame:', frame.substr(config.trunc)); }
+    if (config.trunc != 0) { console.log('xmit', 'POST', msg_type, 'port:', port, 'hint:', hint(port), 'frame:', frame.substr(config.trunc)); }
+
+// HACK
+    var words = msg_type.split(' ');
+    if (words.length < 2) {
+        if (words[1] != 'ECHO') {
+            // jigger 'port' based upon routing table
+        }
+    }
 
     // fudge things here when route-repair:
     if (msg_type.slice(0, 4) == 'ECHO') {
@@ -134,6 +143,13 @@ app.post('/port/:port_id', function (req, res) {
     adapterWrite(port, msg_type);
     res.send('POST port ...' + JSON.stringify(req.params));
 });
+
+// static char *port_name[NUM_INTERFACES] = { "enp6s0", "enp7s0", "enp8s0", "enp9s0" };
+function hint(port) {
+    var nick = device2host[port];
+    if (nick == null) nick = 'bogus';
+    return nick;
+}
 
 function adapterWrite(port, message) {
     last_ait[port] = message;
@@ -251,13 +267,68 @@ var receiveListener = function (data) {
     }
 };
 
+var device2host = {
+    "enp6s0" : "Alice",
+    "enp8s0" : "Bob",
+    "enp9s0" : "Carol",
+    "enp7s0" : "Ted",
+};
+var device2slot = {
+    "enp6s0" : 1,
+    "enp8s0" : 2,
+    "enp9s0" : 3,
+    "enp7s0" : 4,
+};
+var host2cell = {
+    "Alice" : 0,
+    "Bob" : 1,
+    "Carol" : 2,
+    "Ted" : 2,
+};
+
+/*
+    phy enqueue Alice C:0 2 1550074879873183 "1550074879873183 Hello" ; http://localhost:3000/backdoor/enp8s0 status=200
+    C1p1 C0p2 backward 1550074879873183 "1550074879873183 Hello"
+
+    phy dequeue Alice C:0 2 1550074879899000 "1550074879873183 Hello" ; http://localhost:3000/backdoor/enp8s0 status=200
+    C1p1 C0p2 backward 1550074879899000 "1550074879873183 Hello"
+*/
+
+// fudge things here:
+// { AITMessage, deviceName }
+var fakeDequeue = function(obj) {
+    var msg_type = obj.AITMessage;
+    var deviceName = obj.deviceName;
+    var port_index = device2slot[deviceName]; if (port_index == null) port_index = 100; // 'bogus';
+    var url = 'http://localhost:' + s_port + '/backdoor/' + deviceName;
+    var now = Date.now() * 1000.0; // (new Date).getTime();
+
+    // hardwired knowledge of demo config
+    var recv_cell = host2cell[hostname]; if (recv_cell == null) recv_cell = 50; // 'bogus';
+    var recv_port = port_index;
+    var xmit_cell = recv_port - 1;
+    var xmit_port = recv_cell + 1;
+    var bias = (recv_cell > xmit_cell) ? 'forward' : 'backward';
+
+    var recv_phy = 'C:' + recv_cell;
+    var xmit_phy = 'C:' + xmit_cell;
+    var dest = 'C' + recv_cell + 'p' + recv_port;
+    var src = 'C' + xmit_cell + 'p' + xmit_port;
+    console.log('   ', 'phy dequeue', hostname, recv_phy, port_index, now, '"' + msg_type + '"', ';', url, 'status=200');
+    console.log('   ', src, dest, bias, now, '"' + msg_type + '"');
+}
+
 // fudge things here:
 // { AITMessage, deviceName }
 var echoServer = function(obj) {
     var msg_type = obj.AITMessage;
     var deviceName = obj.deviceName;
 
-    if (msg_type.slice(0, 4) != 'ECHO') { return; }
+    // UN-HACK
+    var words = msg_type.split(' ');
+    if (words.length < 2) { return; }
+    if (words[1] != 'ECHO') { return; }
+    // if (msg_type.slice(0, 4) != 'ECHO') { return; }
 
 console.log('echo', 'from', deviceName);
 
@@ -267,8 +338,16 @@ console.log('echo', 'from', deviceName);
     // mini routing table here
     var port = 0;
 
+// FIXME : log outbound?
+// cellAgentUpdate(req.body);
+
     // automated response:
-    adapterWrite(deviceName, 'R' + msg_type);
+    // adapterWrite(deviceName, 'R' + msg_type);
+
+    // UN-HACK
+    words[1] = 'RECHO';
+    msg_type = words.join(' ');
+    adapterWrite(deviceName, msg_type);
 };
 
 var connectionListener = function (socket) {
