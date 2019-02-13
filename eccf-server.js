@@ -324,6 +324,7 @@ var fakeDequeue = function(obj) {
 // fudge things here:
 // { AITMessage, deviceName }
 var echoServer = function(obj) {
+    console.log('echoServer', obj);
     var msg_type = obj.AITMessage;
     var deviceName = obj.deviceName;
 
@@ -333,23 +334,47 @@ var echoServer = function(obj) {
     if (words[1] != 'ECHO') { return; }
     // if (msg_type.slice(0, 4) != 'ECHO') { return; }
 
-console.log('echo', 'from', deviceName);
+    words[1] = 'RECHO';
+    msg_type = words.join(' ');
 
     // fudge things here when route-repair:
     // jigger 'port' based upon routing table
 
+    var tree = 'unknown'; // var o = JSON.parse(msg_type); var tree = o.tree;
+
     // mini routing table here
     var port = 0;
 
-// FIXME : log outbound?
-// cellAgentUpdate(req.body);
+    var now = Date.now() * 1000.0;
+    var port_index = device2slot[deviceName]; if (port_index == null) port_index = 100; // 'bogus';
+
+    // hardwired knowledge of demo config
+    var recv_cell = host2cell[hostname]; if (recv_cell == null) recv_cell = 50; // 'bogus';
+    var recv_port = port_index;
+    var xmit_cell = recv_port - 1;
+    var xmit_port = recv_cell + 1;
+
+    var recv_phy = 'C:' + recv_cell;
+    var xmit_phy = 'C:' + xmit_cell;
+
+    var frame = ''; // trust this works!
+    var msg_id = 1; // trust this works!
+
+    // log outbound (visualize)
+    var ca_msg = {
+        'epoch': now,
+        'pe_id': recv_phy,
+        'outbound': recv_port,
+        'tree': tree,
+        'frame': frame,
+        'ait_code': 'NORMAL',
+        'msg_id': msg_id,
+        'msg_type': msg_type,
+    };
+    cellAgentUpdate(ca_msg);
 
     // automated response:
     // adapterWrite(deviceName, 'R' + msg_type);
-
-    // UN-HACK
-    words[1] = 'RECHO';
-    msg_type = words.join(' ');
     adapterWrite(deviceName, msg_type);
 };
 

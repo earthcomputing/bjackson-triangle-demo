@@ -396,7 +396,7 @@ function dumper(frame) {
 
 var processBackdoor = (function() {
     return function(msg) {
-        console.log('backdoor-update:', machineName, msg);
+        console.log('backdoor-update:', machineName, 'recv', msg);
         var nickname = msg.nickname;
         if (machineName != nickname) return;
 
@@ -425,7 +425,7 @@ var processBackdoor = (function() {
 
 var processCellAgent = (function() {
     return function(msg) {
-        console.log('cellagent-update:', machineName, msg);
+        console.log('cellagent-update:', machineName, 'xmit', msg);
         var nickname = msg.nickname;
         if (machineName != nickname) return;
 
