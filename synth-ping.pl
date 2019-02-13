@@ -99,14 +99,16 @@ read_config($cfile);
 ## $serialized_msg->{payload} : { tree_id - body }
 # $payload->{body} : array[u8]-coded text
 
+my $delay = 1;
 {
     my $dash_guid = '4000e4c0-929a-46ad-8243-8ab8b0629b5d';
     my $id = 1;
     my $seq_no = 1;
-    foreach my $seq_no (1..10) {
+    foreach my $seq_no (1..2) {
         my $line = echo_op($dash_guid, $id, $seq_no);
         my $pe_op = decode_json($line);
         xmit_packet($pe_op);
+        sleep($delay) if $delay;
     }
 }
 exit 0;
@@ -302,6 +304,10 @@ sub build_line {
     my $new_frame = JSON->new->canonical->encode($frame);
     my $raw_frame = str2hex($new_frame);
     $pe_op->{frame} = $raw_frame;
+
+### HACK!!!
+
+$pe_op->{msg_type} = $body;
 
     my $line = JSON->new->canonical->encode($pe_op);
     return $line;
