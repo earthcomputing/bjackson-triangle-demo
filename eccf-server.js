@@ -153,7 +153,10 @@ function hint(port) {
 
 function adapterWrite(port, message) {
     last_ait[port] = message;
-    c_socket.write('{ \"port\": \"' + port + '\", \"message\":\"' + message + '\" }')
+    // var json_text = '{ \"port\": \"' + port + '\", \"message\":\"' + message + '\" }';
+    var o = { 'port': port, 'message': message }
+    var json_text = JSON.stringify(o);
+    c_socket.write(json_text)
 }
 
 // backdoor-update - share with visualizers:
