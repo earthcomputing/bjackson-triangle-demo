@@ -40,6 +40,8 @@ my $port_map;
 my $cell_map;
 my $nicknames;
 
+my $DEBUG; # = 1;
+
 if ( $#ARGV < 0 ) {
     print('usage: [-config='.$cfile.'] [-machine='.$machine_name.']] <hostname:port>', $endl);
     exit -1
@@ -133,13 +135,14 @@ sub read_loop {
 
         my $port_id = $json->{port};
         my $msg = $json->{message};
-        # print(join(' ', 'DEBUG:', $port_id, $msg, $dquot.$data.$dquot, Dumper $json), $endl);
+        print(join(' ', 'DEBUG:', $port_id, $msg, $dquot.$data.$dquot, Dumper $json), $endl) if $DEBUG;
 
         my $port = invert_port($port_id);
         my $cid = $cell; $cid =~ s/C://;
         my $endpoint = 'C'.$cid.'p'.($port+1);
         my ($dest, $bias) = find_chan($endpoint);
-        # print(join(' ', 'DEBUG:', $port, $cid, $endpoint, $dest), $endl) unless defined $dest;
+        print(join(' ', 'DEBUG:', $port, $cid, $endpoint, $dest, $bias), $endl) unless defined $dest;
+        print(join(' ', 'DEBUG:', $port, $cid, $endpoint, $dest, $bias), $endl) if $DEBUG;
 
         next unless $dest =~ m/C(\d)p(\d)/;
         my ($n_cell, $n_port) = ($1, $2);
@@ -147,7 +150,7 @@ sub read_loop {
         my $nick = $nicknames->{$pe_id};
         my $n_sock = $cell_map->{$pe_id};
         my $url = api($pe_id, $n_port);
-        # print(join(' ', 'DEBUG:', $n_cell, $n_port, $pe_id, $nick, $n_sock, $url), $endl);
+        print(join(' ', 'DEBUG:', $n_cell, $n_port, $pe_id, $nick, $n_sock, $url), $endl) if $DEBUG;
 
         my $o = {
             pe_id => $pe_id,
@@ -160,8 +163,8 @@ sub read_loop {
 
         print(join(' ', $endpoint, $dest, $bias, $now, $msg), $endl);
 
-        $data = $now." ok".$endl;
-        # $csock->send($data); ## when debugging - echo input
+        # my $hdx = $now." ok".$endl;
+        # $csock->send($hdx); ## when debugging - echo input
     }
 }
 
