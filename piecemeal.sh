@@ -27,18 +27,29 @@ cat > ${dir}/triangle-demo.html << _eos_
 </frameset>
 _eos_
 
-echo 'ssh -t demouser@'${alice}' "nodejs '${wdir}'/eccf-server.js Alice 3000 1337"' > ${dir}/alice-eccf.command
-echo 'ssh -t demouser@'${bob}'   "nodejs '${wdir}'/eccf-server.js Bob   3000 1337"' > ${dir}/bob-eccf.command
-echo 'ssh -t demouser@'${carol}' "nodejs '${wdir}'/eccf-server.js Carol 3000 1337"' > ${dir}/carol-eccf.command
+# set position and logical size
+echo "printf '\e[3;0;0t' ; printf '\e[8;15;95t'" > ${dir}/alice-eccf.command
+echo "printf '\e[3;0;250t' ; printf '\e[8;15;95t'" > ${dir}/bob-eccf.command
+echo "printf '\e[3;0;500t' ; printf '\e[8;15;95t'" > ${dir}/carol-eccf.command
 
-echo 'ssh -t demouser@'${alice}' "cd '${demo_dir}'; ./adapter Alice"' > ${dir}/alice-adapt.command
-echo 'ssh -t demouser@'${bob}'   "cd '${demo_dir}'; ./adapter Bob"' > ${dir}/bob-adapt.command
-echo 'ssh -t demouser@'${carol}' "cd '${demo_dir}'; ./adapter Carol"' > ${dir}/carol-adapt.command
+echo "printf '\e[3;700;0t' ; printf '\e[8;15;95t'" > ${dir}/alice-adapt.command
+echo "printf '\e[3;700;250t' ; printf '\e[8;15;95t'" > ${dir}/bob-adapt.command
+echo "printf '\e[3;700;500t' ; printf '\e[8;15;95t'" > ${dir}/carol-adapt.command
+
+echo "printf '\e[3;0;700t' ; printf '\e[8;9;175t'" > ${dir}/poster.command
+
+echo 'ssh -t demouser@'${alice}' "nodejs '${wdir}'/eccf-server.js Alice 3000 1337"' >> ${dir}/alice-eccf.command
+echo 'ssh -t demouser@'${bob}'   "nodejs '${wdir}'/eccf-server.js Bob   3000 1337"' >> ${dir}/bob-eccf.command
+echo 'ssh -t demouser@'${carol}' "nodejs '${wdir}'/eccf-server.js Carol 3000 1337"' >> ${dir}/carol-eccf.command
+
+echo 'ssh -t demouser@'${alice}' "cd '${demo_dir}'; ./adapter Alice"' >> ${dir}/alice-adapt.command
+echo 'ssh -t demouser@'${bob}'   "cd '${demo_dir}'; ./adapter Bob"' >> ${dir}/bob-adapt.command
+echo 'ssh -t demouser@'${carol}' "cd '${demo_dir}'; ./adapter Carol"' >> ${dir}/carol-adapt.command
 
 # Danger : different wdir:
 set wdir = `pwd`
 
-echo 'cd '${wdir}'; ./post-frame.pl -config=blueprint-triangle.json -delay=1 ' ${frames} > ${dir}/poster.command
+echo 'cd '${wdir}'; ./post-frame.pl -config=blueprint-triangle.json -delay=1 ' ${frames} >> ${dir}/poster.command
 
 chmod +x ${dir}/*.command
 
