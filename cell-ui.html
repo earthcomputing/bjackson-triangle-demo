@@ -427,7 +427,10 @@ var processCellAgent = (function() {
     return function(msg) {
         console.log('cellagent-update:', machineName, 'xmit', msg);
         var nickname = msg.nickname;
-        if (machineName != nickname) return;
+        if (machineName != nickname) {
+            console.log('ERROR:', "event not for me?", machineName, nickname);
+            return;
+        }
 
         var epoch = msg.epoch;
         var cell_id = msg.pe_id;
@@ -468,7 +471,7 @@ function xmit(port, msg_type) {
         var port_line = ''
             + '<br/>' + '<font color="red">xmit:</font> ' + msg_type
         ;
-        $('#port'+port).append(port_line);
+    $('#port'+port).append(port_line);
 }
 
 function recv(port, msg_type) {

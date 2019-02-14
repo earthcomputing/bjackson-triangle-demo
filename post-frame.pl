@@ -46,7 +46,7 @@ foreach my $fname (@ARGV) {
     process_file($fname);
 }
 
-# JSON : { pe_id, outbound, ait_code, tree, msg_id, frame }
+# JSON : { ait_code epoch frame msg_id msg_type outbound pe_id tree } # w/added nickname
 # phy enqueue C:1 1 TOCK 0x400074367c704351baf6176ffc4e1b6a msg_id=1835423081272486972 7b226d7367... ;
 sub process_file {
     my ($path) = @_;

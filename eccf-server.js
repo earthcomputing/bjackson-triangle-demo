@@ -166,6 +166,7 @@ function backdoorUpdate(d) {
 }
 
 // cellagent-update - share with visualizers
+// JSON : { ait_code epoch frame msg_id msg_type outbound pe_id tree } # w/added nickname
 function cellAgentUpdate(d) {
     if (config.verbose) console.log('cellagent-update:', d);
     io.emit('cellagent-update', d);
@@ -282,6 +283,7 @@ var device2slot = {
     "enp9s0" : 3,
     "enp7s0" : 4,
 };
+var slot2device = [ "enp6s0", "enp8s0", "enp9s0", "enp7s0" ];
 var host2cell = {
     "Alice" : 0,
     "Bob" : 1,
@@ -361,15 +363,19 @@ var echoServer = function(obj) {
     var msg_id = 1; // trust this works!
 
     // log outbound (visualize)
+    // JSON : { ait_code epoch frame msg_id msg_type outbound pe_id tree } # w/added nickname
+    var neighbor_device = (xmit_port < slot2device.length) ? slot2device[recv_cell] : 'unknown'; // 'enp6s0'
+    var nickname = hint(neighbor_device); // hostname for dest web server (eccf)
     var ca_msg = {
-        'epoch': now,
-        'pe_id': recv_phy,
-        'outbound': recv_port,
-        'tree': tree,
-        'frame': frame,
         'ait_code': 'NORMAL',
+        'epoch': now,
+        'frame': frame,
         'msg_id': msg_id,
         'msg_type': msg_type,
+        'nickname': nickname,
+        'outbound': recv_port,
+        'pe_id': recv_phy,
+        'tree': tree,
     };
     cellAgentUpdate(ca_msg);
 
