@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html lang="en">
+<head>
+<style>
+    table { background: 'red'; cellspacing: 0; }
+    table, td {  border: 0px solid black; background: 'none'; }
+
+    .count { font-family: 'Arial Black', 'Arial Bold', Gadget, sans-serif;
+        font-size: 45px; font-style: normal; font-variant: normal; font-weight: 500; line-height: 15.4px;
+    }
+
+    .med { font-family: 'Arial Black', 'Arial Bold', Gadget, sans-serif;
+        font-size: 35px; font-style: normal; font-variant: normal; font-weight: 500; line-height: 30.4px;
+        fill: none;
+    }
+
+    h2 { font-family: 'Arial Black', 'Arial Bold', Gadget, sans-serif;
+        font-size: 60px; font-style: normal; font-variant: normal; font-weight: 500; line-height: 15.4px;
+    }
+
+    #AITMsgBody {
+        border: 6px solid #999;
+        border-radius: 10px;
+        margin-left: 100px;
+        padding-left: 10px;
+    }
+
+    path  {
+        fill: 'blue'
+    }
+
+    .btn-lg, .btn-group-lg>.btn {
+        padding: 10px 16px;
+        font-size: 18px;
+        line-height: 1.33;
+        border-radius: 6px;
+    }
+
+    .r45 {
+        transform: rotate(60deg);
+    }
+</style>
+
+<!--
+<script src='offline/jquery.js' type='text/javascript'></script>
+<script src='offline/d3.min.js' type="text/Javascript"></script>
+<script src='offline/d3-selection-multi.min.js' type="text/Javascript">implements .attrs for d3.v4 GGG</script>
+-->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.min.css">
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<script src="https://d3js.org/d3.v5.min.js"></script>
+<script src="https://d3js.org/d3-selection-multi.v1.min.js"></script>
+<script src="node_modules/socket.io-client/dist/socket.io.js"></script>
+</head>
+<body>
+<h1>Earth Computing</h1>
+<h2 id='machineName'>Cell: machineName</h2>
+
+<!-- injected operation -->
+<div id='cellAgentRecv' class='frame'> ABCD </div>
+<div id='backdoorRecv' class='frame'> ABCD </div>
+
+<script> // https://bl.ocks.org/mbostock/5100636
+
+// mechanical connector ordering
+var port2deviceName = {
+    1: 'enp6s0',
+    2: 'enp8s0',
+    3: 'enp9s0',
+    4: 'enp7s0'
+}
+
+var deviceName2port = {
+    enp6s0: '1',
+    enp7s0: '4',
+    enp8s0: '2',
+    enp9s0: '3'
+}
+
+function setMachineName(machineName) {
+    $('#machineName').html('Cell: ' + machineName);
+}
+
+// --
+
+var kv = document.URL.split('?')[1].split('&').map(function(d) { return d.split('='); });
+var o = {}; kv.forEach(function(d) { o[d[0]] = d[1]; }); // convert to a hash
+
+// mandatory arguments:
+var machineName = o.machineName;
+var machineColor = o.color;
+
+$().ready(function() {
+    setMachineName(machineName);
+    $('body').css({ background: machineColor });
+});
+
+// --
+
+var socket = io();
+
+// earth-update { machineName deviceName linkState entlState entlCount AITSent AITRecieved }
+socket.on('earth-update', function(data) {
+    data = JSON.parse(data.toString()); // why?
+    processPacket(data);
+});
+
+// backdoor-update
+socket.on('backdoor-update', function(data) {
+    // data = JSON.parse(data.toString()); // why not?
+    processBackdoor(data);
+});
+
+// cellagent-update { port tree frame }
+socket.on('cellagent-update', function(data) {
+    // data = JSON.parse(data.toString()); // why not?
+    processCellAgent(data);
+});
+
+// --
+
+// driver-update { port message }
+var sendPacket = function(source, msg) {
+    var port = port2deviceName[source];
+    var data = { 'message': msg, 'port': port };
+    socket.emit('aitMessage', data);
+};
+
+// unused ?
+function sendMessage(formi, i) {
+    var message = formi.inputbox.value;
+    formi.inputbox.value = '';
+    var data = { 'message': message, 'port': i };
+    console.log(data);
+    console.log(socket);
+    socket.emit('aitMessage', data);
+}
+
+// --
+
+var processPacket = (function() {
+    return function(packet) {
+        var val = parseInt(packet.entlCount);
+        var port = deviceName2port[packet.deviceName];
+        var entlState = packet.entlState;
+        var msg = packet.AITRecieved;
+
+        $('#counter_' + port).html(val % 10000);
+
+        // FIXME: suppresses duplicates ??
+
+        if (p_messages[port] != msg) {
+            $('#recvBody_' + port).html(msg);
+            $('#recv_' + port).css({ 'background-color': 'pink' });
+            setTimeout(function() { $('#recv_' + port).css({ 'background-color': 'transparent' }); }, 1500);
+            p_messages[port] = msg;
+            recv(port, msg) // append to log
+        }
+    };
+})();
+
+var processBackdoor = (function() {
+    return function(msg) {
+        console.log('backdoor-update:', machineName, 'recv', msg);
+        var nickname = msg.nickname;
+        if (machineName != nickname) return;
+
+        // var device_id = req.params.port_id;
+        var cell_id = msg.pe_id;
+        var port = msg.inbound;
+        var epoch = msg.xmit_now;
+        var msg_type = msg.msg_type;
+
+        var content = '<b class="med">'
+                + '<p/>'
+            + '<br/>' + msg_type
+            + '<br/>' + ' port: ' + port
+            + '<br/>' + ' epoch: ' + epoch
+                + '</b>'
+                + '<p/>'
+            + '<br/>' + ' cell_id: ' + cell_id
+            + '<br/>' + ' nickname: ' + nickname
+            + '<br/>' + ' machineName: ' + machineName
+        ;
+        $('#backdoorRecv').html(content);
+
+        recv(port, msg_type);
+    };
+})();
+
+var processCellAgent = (function() {
+    return function(msg) {
+        console.log('cellagent-update:', machineName, 'xmit', msg);
+        var nickname = msg.nickname;
+        if (machineName != nickname) {
+            console.log('ERROR:', "event not for me?", machineName, nickname);
+            return;
+        }
+
+        var epoch = msg.epoch;
+        var cell_id = msg.pe_id;
+        var port = msg.outbound;
+        var tree = msg.tree;
+        var frame = msg.frame;
+        var ait_code = msg.ait_code;
+        var msg_id = msg.msg_id;
+        var msg_type = msg.msg_type;
+
+        var content = '<b class="med">'
+                + '<p/>'
+            + '<br/>' + msg_type
+            + '<br/>' + ' port: ' + port
+            + '<br/>' + ' tree: ' + tree
+            + '<br/>' + ' epoch: ' + epoch
+            + '<br/>' + ' msg_id: ' + msg_id
+                + '</b>'
+                + '<p/>'
+            + '<br/>' + ' cell_id: ' + cell_id
+            + '<br/>' + ' nickname: ' + nickname
+            + '<br/>' + ' machineName: ' + machineName
+            + '<br/>' + ' ait_code: ' + ait_code
+            + '<br/>' + ' frame: '
+                + '<br/>' + '<pre>' + dumper(frame) + '</pre>'
+        ;
+        $('#cellAgentRecv').html(content);
+
+        xmit(port, msg_type);
+    };
+})();
+
+function xmit(port, msg_type) {
+    var ca_line = ''
+        + '<br/>' + ' port: ' + port + ' <font color="red">xmit:</font> ' + msg_type
+    ;
+    $('#cellAgentLog').append(ca_line);
+        var port_line = ''
+            + '<br/>' + '<font color="red">xmit:</font> ' + msg_type
+        ;
+    $('#port'+port).append(port_line);
+}
+
+function recv(port, msg_type) {
+    var ca_line = ''
+        + '<br/>' + ' port: ' + port + ' <font color="blue">recv:</font> ' + msg_type
+    ;
+    $('#cellAgentLog').append(ca_line);
+        var port_line = ''
+            + '<br/>' + '<font color="blue">recv:</font> ' + msg_type
+        ;
+        $('#port'+port).append(port_line);
+}
+
+// FIXME : folded 7-bit ASCII
+function dumper(frame) {
+    var str = "";
+    for (var i = 0; i < frame.length; i += 2) {
+        var hexstr = frame.substr(i, 2);
+        var ch = parseInt('0x' + hexstr, 16);
+        str += String.fromCharCode(ch); // FIXME
+        if ((i % 160) > 157) str += "\n";
+    }
+    return str;
+}
+
+</script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 
 const cell_ui = 'cell-ui.html';
+const graph_ui = 'graph-ui.html';
 
 if (process.argv.length <= 2) {
     console.log("Usage:", __filename, "<hostname> [<s_port] [<c_port]");
@@ -187,6 +188,14 @@ app.get('/git-version', function (req, res) {
 app.get('/git-config', function (req, res) {
     res.set('Content-Type', 'text/plain');
     res.sendFile(__dirname + '/.git/config');
+});
+
+app.get('/' + graph_ui, function (req, res) {
+    res.sendFile(__dirname + '/' + graph_ui);
+});
+
+app.get('/' + cell_ui, function (req, res) {
+    res.sendFile(__dirname + '/' + cell_ui);
 });
 
 app.get('/', function (req, res) {
