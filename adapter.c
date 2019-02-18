@@ -33,6 +33,7 @@ typedef struct link_device {
     int entlCount; // entl_error_sig_handler
     char AITMessageR[MAX_AIT_MESSAGE_SIZE]; // entl_ait_sig_handler
     char AITMessageS[MAX_AIT_MESSAGE_SIZE]; // unused ??
+    long recvTime;
     char json[MAX_JSON_TEXT]; // toJSON
 } link_device_t;
 
@@ -151,6 +152,8 @@ static char *json_escape_string(char *str, char *out, int maxlen) {
     return out;
 }
 
+// line-oriened ASCII data record(s)
+// FIXME : AITRecieved MAY NOT contain newlines! or JSON formatting, or bare double-quotes ...
 #define JSON_PAT "{" \
     "\"machineName\":\"%s\"," \
     "\"deviceName\":\"%s\"," \
@@ -158,12 +161,19 @@ static char *json_escape_string(char *str, char *out, int maxlen) {
     "\"entlState\":\"%s\"," \
     "\"entlCount\":\"%d\"," \
     "\"AITSent\":\"%s\"," \
-    "\"AITRecieved\": \"%s\"" \
+    "\"AITRecieved\":\"%s\"," \
+    "\"recvTime\":\"%ld\"" \
 "}\n"
 
 // translate device state to JSON text
+// the length of the strings produced is locale-dependent and difficult to predict
+// LANG=C LC_ALL=C
 static int toJSON(link_device_t *dev) {
     if (NULL == dev) return 0;
+    char encoded_recv[2*MAX_AIT_MESSAGE_SIZE];
+
+    char *p = json_escape_string(dev->AITMessageR, encoded_recv, 2*MAX_AIT_MESSAGE_SIZE);
+    if (!p) { syslog(LOG_WARNING, "(%s) toJSON - AIT read msg size exceeded", machine_name); return -1; }
 
     int size = snprintf(dev->json, MAX_JSON_TEXT, JSON_PAT,
         machine_name,
@@ -172,7 +182,8 @@ static int toJSON(link_device_t *dev) {
         str4code(dev->entlState),
         dev->entlCount,
         dev->AITMessageS,
-        dev->AITMessageR
+        encoded_recv,
+        dev->recvTime
     );
     if (size < 0) { syslog(LOG_WARNING, "(%s) JSON snprintf: %m", machine_name); }
     return size;
@@ -184,6 +195,7 @@ static void init_link(link_device_t *l, char *port_id) {
     l->entlState = 100; // unknown
     snprintf(l->AITMessageS, MAX_AIT_MESSAGE_SIZE, " ");
     snprintf(l->AITMessageR, MAX_AIT_MESSAGE_SIZE, " ");
+    l->recvTime = now();
 }
 
 static int entt_read_ait(struct ifreq *req, struct entt_ioctl_ait_data *atomic_msg) {
@@ -196,7 +208,10 @@ static int entt_read_ait(struct ifreq *req, struct entt_ioctl_ait_data *atomic_m
         syslog(LOG_WARNING, "(%s) SIOCDEVPRIVATE_ENTT_READ_AIT: %m", machine_name);
     }
     else if (atomic_msg->message_len > 0) {
-        // what if message_len >= MAX_AIT_MESSAGE_SIZE ??
+        if (atomic_msg->message_len >= MAX_AIT_MESSAGE_SIZE) {
+            syslog(LOG_WARNING, "(%s) SIOCDEVPRIVATE_ENTT_READ_AIT: oversize msg: %d", machine_name, atomic_msg->message_len);
+        }
+        // FIXME: string/binary ambiguity
         char buf[MAX_AIT_MESSAGE_SIZE];
         memset(buf, 0, MAX_AIT_MESSAGE_SIZE);
         memcpy(buf, atomic_msg->data, atomic_msg->message_len);
@@ -209,9 +224,7 @@ static int entt_read_ait(struct ifreq *req, struct entt_ioctl_ait_data *atomic_m
     return rc;
 }
 
-static int entt_send_ait(struct ifreq *req, struct entt_ioctl_ait_data *atomic_msg, char *msg) {
-    atomic_msg->message_len = strlen(msg) + 1;
-    snprintf(atomic_msg->data, MAX_AIT_MESSAGE_SIZE, "%s", msg);
+static int entt_send_ait(struct ifreq *req, struct entt_ioctl_ait_data *atomic_msg) {
     req->ifr_data = (char *)atomic_msg;
 
     ACCESS_LOCK;
@@ -220,7 +233,7 @@ static int entt_send_ait(struct ifreq *req, struct entt_ioctl_ait_data *atomic_m
         syslog(LOG_WARNING, "(%s) SIOCDEVPRIVATE_ENTT_SEND_AIT: %m", machine_name);
     }
     else {
-        syslog(LOG_INFO, "(%s) entt_send_ait - interface: %s msg: \"%s\"\n", machine_name, req->ifr_name, msg);
+        syslog(LOG_INFO, "(%s) entt_send_ait - interface: %s msg: \"%s\"\n", machine_name, req->ifr_name, atomic_msg->data);
     }
     ACCESS_UNLOCK;
     return rc;
@@ -304,6 +317,10 @@ static void entl_ait_sig_handler(int signum) {
         if (atomic_msg->message_len == 0) continue;
 
         syslog(LOG_INFO, "(%s) entl_ait_sig_handler - interface: %s message_len: %d\n", machine_name, req->ifr_name, atomic_msg->message_len);
+
+        // FIXME: string/binary ambiguity
+        // what if atomic_msg->data is missing NUL ??
+        l->recvTime = now();
         memcpy(l->AITMessageR, atomic_msg->data, atomic_msg->message_len);
         toJSON(l);
         toServer(l->json);
@@ -361,6 +378,7 @@ static void *read_task(void *me) {
 
         char *port = cJSON_GetObjectItem(root, "port")->valuestring;
         char *message = cJSON_GetObjectItem(root, "message")->valuestring;
+        // FIXME: string !!
 
         // FIXME : message length
         size_t len = strlen(message);
@@ -376,7 +394,10 @@ static void *read_task(void *me) {
 
             if (!strcmp(port, port_id)) {
                 // syslog(LOG_INFO, "(%s) read_task - port: %s index: %d message: \"%s\"\n", machine_name, port, i, message);
-                entt_send_ait(req, atomic_msg, message);
+                atomic_msg->message_len = strlen(message) + 1;
+                int size = snprintf(atomic_msg->data, MAX_AIT_MESSAGE_SIZE, "%s", message);
+                if (size < 0) { syslog(LOG_WARNING, "(%s) read_task - msg size exceeded: %m", machine_name); }
+                entt_send_ait(req, atomic_msg);
                 break;
             }
         }
