@@ -57,11 +57,17 @@ sub process_file {
         my $json_text = $_;
         my $o = decode_json($json_text);
 
-# bogus records
-unless (defined $o->{outbound}) {
-    print(join(' ', 'BAD RECORD', $o->{epoch}, $o->{pe_id}, 'null', $o->{tree}, $o->{msg_type}), $endl);
-    $o->{outbound} = -1;
-}
+        # bogus records - workaround for analyzer bug
+        unless (defined $o->{outbound}) {
+            print(join(' ', 'BAD RECORD', $o->{epoch}, $o->{pe_id}, 'null', $o->{tree}, $o->{msg_type}), $endl);
+            $o->{outbound} = -1;
+            next;
+        }
+
+        my $fo = pe_process($o);
+        if (defined $fo) {
+            $o->{msg_type} = JSON->new->canonical->encode($fo);
+        }
 
         my $cell_id = $o->{pe_id};
         my $port = $o->{outbound};
@@ -83,6 +89,141 @@ unless (defined $o->{outbound}) {
         print('status=', $response->{'status'}, $endl);
         sleep($delay) if $delay;
     }
+}
+
+## deserialize / unravel:
+sub pe_process {
+    my ($pe_op) = @_;
+
+    my $raw_frame = $pe_op->{frame};
+    # print($raw_frame, $endl);
+
+    my $frame = frame2obj($raw_frame);
+    # return unless defined $frame;
+    # print(Dumper $frame, $endl);
+
+    my $raw_msg = $frame->{serialized_msg};
+    # $raw_msg =~ s/^"//; $raw_msg =~ s/"$//;
+    my $msg = decode_json($raw_msg);
+    # return unless defined $msg;
+    # print(Dumper $msg, $endl);
+
+    my $hdr = $msg->{header};
+    my $payload = $msg->{payload};
+    # return unless defined $hdr;
+    # return unless defined $payload;
+    # print(Dumper $hdr, $endl);
+    # print(Dumper $payload, $endl);
+
+    my $msg_type = $hdr->{msg_type};
+    # return unless defined $msg_type;
+    # print($msg_type, $endl);
+
+    # print(join(' ', $pe_op->{msg_type}, $frame->{msg_type}, $hdr->{msg_type}), $endl);
+    # print(join(' ', '    TREE', $pe_op->{tree}, $payload->{tree_id}{uuid}{uuid}, $payload->{tree_id}{name}), $endl) if defined $payload->{tree_id};
+
+    # sanity checking:
+    shape($msg_type, $pe_op, 'ait_code epoch frame msg_id msg_type outbound pe_id tree');
+    shape($msg_type, $frame, 'msg_type serialized_msg');
+    shape($msg_type, $msg, 'header payload');
+    shape($msg_type, $hdr, 'direction is_ait msg_count msg_type sender_id tree_map');
+
+    # shape($msg_type, $payload, 'body tree_id'); # only for 'Application'
+
+    # print(Dumper $pe_op, $endl);
+    # print(Dumper $frame, $endl);
+    # print(Dumper $msg, $endl);
+    # print(Dumper $hdr, $endl);
+    # print(Dumper $payload, $endl);
+
+    # seems like only Manifest has a non-empty tree_map ??
+    ## my $tree_map = $hdr->{tree_map};
+    ## print(join(' ', '    tree_map:', sort keys $tree_map), $endl) if keys $tree_map;
+
+    if ($msg_type eq 'Hello') {
+        # payload: cell_id port_no
+        my ($cname, $cguid) = parts($payload->{cell_id});
+        my $nick = $nicknames->{$cname}; $nick = '' unless defined $nick;
+        my $o = {
+            'verb' => $msg_type,
+            'nickname' => $nick,
+            'guid' => $cguid,
+            'sector' => $payload->{port_no}
+        };
+        return $o;
+    }
+
+    if ($msg_type eq 'Discover') {
+        # payload : gvm_eqn hops path sending_cell_id tree_id
+        my $o = {
+            'verb' => $msg_type
+        };
+        return $o;
+    }
+
+    if ($msg_type eq 'DiscoverD') {
+        # payload : path senging_cell_id tree_id
+        my $o = {
+            'verb' => $msg_type
+        };
+        return $o;
+    }
+
+    if ($msg_type eq 'Manifest') {
+        # payload : deploy_tree_id manifest tree_name
+        my $o = {
+            'verb' => $msg_type
+        };
+        return $o;
+    }
+
+    if ($msg_type eq 'StackTree') {
+        # payload : allowed_tree gvm_eqn new_tree_id parent_tree_id
+        my $o = {
+            'verb' => $msg_type
+        };
+        return $o;
+    }
+
+    if ($msg_type eq 'StackTreeD') {
+        # payload : tree_id
+        my $o = {
+            'verb' => $msg_type
+        };
+        return $o;
+    }
+
+    if ($msg_type eq 'Application') {
+        # payload : body tree_id
+        my $o = {
+            'verb' => $msg_type
+        };
+        return $o;
+    }
+
+    shape($msg_type, $payload, '');
+    return undef;
+}
+
+sub parts {
+    my ($ref) = @_;
+    return ($ref->{name}, $ref->{uuid}{uuid});
+}
+
+
+sub shape {
+    my ($msg_type, $ref, $expect) = @_;
+    my $keyset = join(' ', sort keys %{$ref});
+    return if $keyset eq $expect;
+    print(join(' ', $msg_type, ':', 'mismatch', $expect, '-', $keyset), $endl);
+}
+
+sub frame2obj {
+    my ($frame) = @_;
+    my $json_text = pack('H*', $frame); # hex_to_ascii
+    my $o = decode_json($json_text);
+    # print($json_text, $endl);
+    return $o;
 }
 
 sub read_config {
