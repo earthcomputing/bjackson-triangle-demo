@@ -76,7 +76,7 @@ app.post('/backdoor/:port_id', function (req, res) {
 
 // FIXME : crossing streams here - 
 
-    var machineName = req.body.nickname;
+    var machineName = req.body.machineName;
     var pe_id = req.body.pe_id;
     var inbound = req.body.inbound;
     var xmit_now = req.body.xmit_now;
@@ -85,15 +85,26 @@ app.post('/backdoor/:port_id', function (req, res) {
     if (config.trunc != 0) { console.log('recv', 'POST', xmit_now, msg_type, 'port:', port, 'hint:', hint(port)); }
 
     var obj = {
-        AITRecieved : msg_type,
-        deviceName : port
+        machineName: machineName,
+        deviceName: port,
+        // linkState:
+        // entlState:
+        // entlCount:
+        // AITSent:
+        recvTime: xmit_now,
+        AITRecieved: msg_type
     };
 
     noteDequeue(obj);
     echoServer(obj);
 
-    // previous state:
+    // machineName deviceName linkState entlState entlCount AITSent AITRecieved recvTime
     var json_txt = JSON.stringify(obj);
+
+    // ensure structure exists (multi-map)
+    if (!json_data[obj.machineName]) { json_data[obj.machineName] = {}; }
+
+    // hang onto line for debugging
     json_data[obj.machineName][obj.deviceName] = json_txt;
 
     res.send('POST backdoor ...' + JSON.stringify(req.params));
@@ -141,15 +152,11 @@ app.post('/port/:port_id', function (req, res) {
     if (config.trunc != 0) { console.log('xmit', 'POST', msg_type, 'port:', port, 'hint:', hint(port), 'frame:', frame.substr(config.trunc)); }
 
 // HACK
-    var words = msg_type.split(' ');
-    if (words.length < 2) {
-        if (words[1] != 'ECHO') {
-            // jigger 'port' based upon routing table
-        }
-    }
+    // verb - ...
+    var obj = JSON.parse(msg_type);
 
     // fudge things here when route-repair:
-    if (msg_type.slice(0, 4) == 'ECHO') {
+    if (obj.verb == 'ECHO') {
         // jigger 'port' based upon routing table
     }
 
@@ -257,17 +264,21 @@ function isBlank(str) {
 // I assume/trust that xmit boundaries apply ??
 var receiveListener = function (data) {
     data = data.toString();
-// could data be undefined ??
     var lines = data.split("\n");
     for (var i = 0, len = lines.length; i < len; i++) {
         var json_txt = lines[i];
         if (isBlank(json_txt)) continue;
 
-        // frame arrived
+        var last_msg = {
+            msg_type: '',
+            recv_time: Date.now() * 1000.0
+        };
+
+        // frame arrived (json, see toJSON, toServer in adapter.c)
         try {
+            // machineName deviceName linkState entlState entlCount AITSent AITRecieved recvTime
             var obj = JSON.parse(json_txt);
             if (obj == undefined) continue;
-            // if (!obj) continue;
 
 // backdoor mimics this:
 
@@ -281,7 +292,7 @@ var receiveListener = function (data) {
             if (!json_data[obj.machineName]) { json_data[obj.machineName] = {}; }
             if (!last_state[obj.machineName]) { last_state[obj.machineName] = {}; }
 
-            // hand onto line for debugging
+            // hang onto line for debugging
             json_data[obj.machineName][obj.deviceName] = json_txt;
 
             var was_state = last_state[obj.machineName][obj.deviceName];
@@ -299,9 +310,15 @@ var receiveListener = function (data) {
 
             var deviceName = obj.deviceName;
             var msg_type = obj.AITRecieved;
-            var now = Date.now() * 1000.0; // (new Date).getTime();
-            // real dequeue: add timestamp to obj.AITRecieved ??
-            if (config.trunc != 0) { console.log('recv', 'READLOOP', now, msg_type, 'port:', deviceName, 'hint:', hint(deviceName)); }
+            var recvTime = obj.recvTime;
+            // var now = Date.now() * 1000.0; // (new Date).getTime();
+
+            if (recvTime == last_msg.recv_time) continue; // suppress duplication from polling loop
+            last_msg.recv_time = recvTime;
+            last_msg.msg_type = msg_type;
+            // could just as easily save 'obj'
+
+            if (config.trunc != 0) { console.log('recv', 'READLOOP', recvTime, msg_type, 'port:', deviceName, 'hint:', hint(deviceName)); }
 
             noteDequeue(obj);
             echoServer(obj);
@@ -366,23 +383,22 @@ var noteDequeue = function(obj) {
 // fudge things here:
 // { AITRecieved, deviceName }
 var echoServer = function(obj) {
-    // could obj.AITRecieved be undefined ??
     var msg_type = obj.AITRecieved;
     var deviceName = obj.deviceName;
 
-if (msg_type == undefined) { console.log('echoServer DEBUG:', obj); return; }
+    if (msg_type == undefined) { console.log('echoServer DEBUG:', obj); return; }
 
     // UN-HACK
-    var words = msg_type.split(' ');
-    if (words.length < 2) { return; }
-    if (words[1] != 'ECHO') { return; }
-    // if (msg_type.slice(0, 4) != 'ECHO') { return; }
+    // verb - ...
+    var obj = JSON.parse(msg_type);
+
+    if (obj.verb != 'ECHO') { return; }
 
     // don't log non-echo requests
     console.log('echoServer', obj);
 
-    words[1] = 'RECHO';
-    msg_type = words.join(' ');
+    obj.verb = 'RECHO';
+    msg_type = JSON.stringify(obj);
 
     // fudge things here when route-repair:
     // jigger 'port' based upon routing table
