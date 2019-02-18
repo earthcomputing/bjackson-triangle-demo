@@ -397,8 +397,10 @@ function dumper(frame) {
 var processBackdoor = (function() {
     return function(msg) {
         console.log('backdoor-update:', machineName, 'recv', msg);
-        var nickname = msg.nickname;
-        if (machineName != nickname) return;
+        if (machineName != msg.machineName) {
+            console.log('ERROR:', "event not for me?", machineName, msg.machineName);
+            return;
+        }
 
         // var device_id = req.params.port_id;
         var cell_id = msg.pe_id;
@@ -414,7 +416,6 @@ var processBackdoor = (function() {
                 + '</b>'
                 + '<p/>'
             + '<br/>' + ' cell_id: ' + cell_id
-            + '<br/>' + ' nickname: ' + nickname
             + '<br/>' + ' machineName: ' + machineName
         ;
         $('#backdoorRecv').html(content);
@@ -426,9 +427,8 @@ var processBackdoor = (function() {
 var processCellAgent = (function() {
     return function(msg) {
         console.log('cellagent-update:', machineName, 'xmit', msg);
-        var nickname = msg.nickname;
-        if (machineName != nickname) {
-            console.log('ERROR:', "event not for me?", machineName, nickname);
+        if (machineName != msg.nickname) {
+            console.log('ERROR:', "event not for me?", machineName, msg.nickname);
             return;
         }
 
@@ -451,7 +451,6 @@ var processCellAgent = (function() {
                 + '</b>'
                 + '<p/>'
             + '<br/>' + ' cell_id: ' + cell_id
-            + '<br/>' + ' nickname: ' + nickname
             + '<br/>' + ' machineName: ' + machineName
             + '<br/>' + ' ait_code: ' + ait_code
             + '<br/>' + ' frame: '
