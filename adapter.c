@@ -38,6 +38,13 @@ typedef struct link_device {
 
 char *entlStateString[] = { "IDLE", "HELLO", "WAIT", "SEND", "RECEIVE", "AM", "BM", "AH", "BH", "ERROR" };
 
+static long now() {
+    struct timeval t;
+    int rc  = gettimeofday(&t, NULL);
+    long epoch = (t.tv_sec * 1000 * 1000) + t.tv_usec;
+    return epoch;
+}
+
 static char *str4code(int code) {
     return (code < 9) ? entlStateString[code] : "UNKNOWN";
 }
