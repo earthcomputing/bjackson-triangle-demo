@@ -66,6 +66,84 @@ static int sock;
     ioctl(sock, SIOCDEVPRIVATE_ENTT_SEND_AIT, req)
 */
 
+// FIXME : can't contain NUL (\0000)
+
+/* Render the cstring provided to an escaped version that can be printed. */
+static char *json_escape_string(char *str, char *out, int maxlen) {
+
+    /* empty string */
+    if (!str) {
+        if (maxlen < 1) { return 0; }
+        return strcpy(out, "");
+    }
+
+    /* set "flag" to 1 if something needs to be escaped */
+    int flag = 0;
+    char *ptr; for (ptr = str; *ptr; ptr++) {
+        char octet = *ptr;
+        flag |= (
+            ((octet > 0) && (octet < 32)) /* unprintable characters */
+          || (octet == '\"') /* double quote */
+          || (octet == '\\') /* backslash */
+        ) ? 1 : 0;
+    }
+
+    /* no characters have to be escaped */
+    if (!flag) {
+        int len = ptr - str;
+        if (maxlen < len + 1) { return 0; }
+        return strcpy(out, str);
+    }
+
+    /* calculate additional space that is needed for escaping */
+    int len = 0;
+    unsigned char token;
+    for (char *ptr = str; (token = *ptr); ptr++) {
+        if (strchr("\"\\\b\f\n\r\t", token)) {
+            len += 2; /* +1 for the backslash */
+        }
+        else if (token < 32) {
+            len += 6; /* \uXXXX */
+        }
+        else {
+            len++;
+        }
+    }
+
+    if (maxlen < len + 1) { return 0; }
+
+    /* copy the string */
+    char *ptr2 = out;
+    for (char *ptr = str; *ptr; ptr++) {
+        char octet = *ptr;
+        if (((unsigned char)octet > 31) && (octet != '\"') && (octet != '\\')) {
+            /* normal character, copy */
+            *ptr2++ = octet;
+        }
+        else {
+            /* character needs to be escaped */
+            *ptr2++ = '\\';
+            unsigned char token;
+            switch (token = octet) {
+                case '\\': *ptr2++ = '\\'; break;
+                case '\"': *ptr2++ = '\"'; break;
+                case '\b': *ptr2++ = 'b'; break;
+                case '\f': *ptr2++ = 'f'; break;
+                case '\n': *ptr2++ = 'n'; break;
+                case '\r': *ptr2++ = 'r'; break;
+                case '\t': *ptr2++ = 't'; break;
+                default:
+                    /* escape and print as unicode codepoint */
+                    sprintf(ptr2, "u%04x", token);
+                    ptr2 += 5;
+                    break;
+            }
+        }
+    }
+    *ptr2++ = '\0';
+    return out;
+}
+
 #define JSON_PAT "{" \
     "\"machineName\":\"%s\"," \
     "\"deviceName\":\"%s\"," \
