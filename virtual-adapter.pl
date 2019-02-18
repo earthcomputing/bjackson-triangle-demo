@@ -136,8 +136,10 @@ sub read_loop {
 
 # --
 
+## FIXME : ensure 'message' is json !!
+
         my $port_id = $json->{port};
-        my $msg = $now.' '.$json->{message};
+        my $msg = $json->{message}; # $now.' '.
         print(join(' ', 'DEBUG:', $port_id, $msg, $dquot.$data.$dquot, Dumper $json), $endl) if $DEBUG;
 
         my $port = invert_port($port_id);
@@ -241,11 +243,12 @@ sub cross_read {
     my $cell_id = $o->{pe_id};
     my $port = $o->{inbound};
     my $nick = $nicknames->{$cell_id}; $nick = '' unless defined $nick;
-    $o->{nickname} = $nick;
+    # $o->{nickname} = $nick;
 
     print(join(' ', $leading, 'phy enqueue',
-        $o->{nickname}, $cell_id, $port,
-        $o->{xmit_now}, $dquot.$o->{msg_type}.$dquot,
+        $nick , $cell_id, $port,
+        # $o->{xmit_now}, 
+        $dquot.$o->{msg_type}.$dquot,
         '; '
     ));
 
