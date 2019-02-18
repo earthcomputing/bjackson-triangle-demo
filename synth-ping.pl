@@ -86,7 +86,9 @@ my $dquot = '"';
 my $blank = ' ';
 
 # FIXME:
-my $cfile = 'blueprint-sim.json'; # or blueprint-triangle.json
+my $cfile;
+$cfile = 'blueprint-triangle.json';
+$cfile = 'blueprint-sim.json';
 
 read_config($cfile);
 
@@ -104,7 +106,7 @@ my $delay = 1;
     my $dash_guid = '4000e4c0-929a-46ad-8243-8ab8b0629b5d';
     my $id = 1;
     my $seq_no = 1;
-    foreach my $seq_no (1..2) {
+    foreach my $seq_no (1..10) {
         my $line = echo_op($dash_guid, $id, $seq_no);
         my $pe_op = decode_json($line);
         xmit_packet($pe_op);
@@ -251,13 +253,13 @@ sub echo_op {
     my $msg_id = '171641756590852295';
 
     my $echo_payload = {
+        verb => 'ECHO',
         tree => $dash_guid,
         id => $id,
         seqno => $seq_no
     };
-    my $raw_echo_payload = JSON->new->canonical->encode($echo_payload);
 
-    my $text_update = 'ECHO '.$raw_echo_payload;
+    my $text_update = JSON->new->canonical->encode($echo_payload);
     my $line = build_line($epoch, $msg_id, $hex_guid, $text_update);
     # print($line, $endl);
     return $line;
