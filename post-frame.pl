@@ -64,6 +64,7 @@ sub process_file {
             next;
         }
 
+        # embed verb + clean-payload into msg_type
         my $fo = pe_process($o);
         if (defined $fo) {
             $o->{msg_type} = JSON->new->canonical->encode($fo);
@@ -84,6 +85,8 @@ sub process_file {
             print($endl, join(' ', 'skipping -', $nick, 'cell:', $cell_id, 'port:', $port), $endl);
             next;
         }
+
+        # POST to /port
         print($url, ' ');
         my $response = $ua->post_form($url, $o);
         print('status=', $response->{'status'}, $endl);

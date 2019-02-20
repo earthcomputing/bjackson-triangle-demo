@@ -66,7 +66,7 @@ app.all('/port/:port_id', function (req, res, next) {
 })
 
 // virtual 'recv' on link
-// /backdoor - JSON : req.body { }
+// backdoor JSON : req.body - { inbound machineName msg_type pe_id xmit_now }
 app.post('/backdoor/:port_id', function (req, res) {
     var port = req.params.port_id;
     backdoorUpdate(req.body);
@@ -139,6 +139,7 @@ app.post('/route/:port_id', function (req, res) {
     res.send('POST route ...' + JSON.stringify(req.params));
 });
 
+// from packet-seq (augmented w/nickname
 // /port - JSON : body { ait_code epoch frame msg_id msg_type nickname outbound pe_id tree }
 app.post('/port/:port_id', function (req, res) {
     var port = req.params.port_id;
@@ -185,7 +186,7 @@ function adapterWrite(port, message) {
 }
 
 // backdoor-update - share with visualizers:
-// backdoor-update - JSON : req.body - { machineName pe_id inbound xmit_now msg_type }
+// backdoor-update - JSON : req.body - { inbound machineName msg_type pe_id xmit_now }
 function backdoorUpdate(d) {
     if (config.verbose) console.log('backdoor-update:', d);
     io.emit('backdoor-update', d); // earth-update

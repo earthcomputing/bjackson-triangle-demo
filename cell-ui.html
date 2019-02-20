@@ -395,7 +395,7 @@ function dumper(frame) {
     return str;
 }
 
-// backdoor-update - JSON : { }
+// backdoor-update - JSON : { inbound machineName msg_type pe_id xmit_now }
 var processBackdoor = (function() {
     return function(msg) {
         console.log('backdoor-update:', machineName, 'recv', msg);
@@ -427,6 +427,7 @@ var processBackdoor = (function() {
 })();
 
 // cellagent-update - JSON : { port tree frame }
+// packet-seq - JSON : { ait_code epoch frame msg_id msg_type outbound pe_id tree } # w/added nickname
 var processCellAgent = (function() {
     return function(msg) {
         console.log('cellagent-update:', machineName, 'xmit', msg);
@@ -504,13 +505,14 @@ socket.on('earth-update', function(data) {
     processPacket(data);
 });
 
-// backdoor-update - JSON : { }
+// backdoor-update - JSON : { inbound machineName msg_type pe_id xmit_now }
 socket.on('backdoor-update', function(data) {
     // data = JSON.parse(data.toString()); // why not?
     processBackdoor(data);
 });
 
 // cellagent-update - JSON : { port tree frame }
+// packet-seq - JSON : { ait_code epoch frame msg_id msg_type outbound pe_id tree } # w/added nickname
 socket.on('cellagent-update', function(data) {
     // data = JSON.parse(data.toString()); // why not?
     processCellAgent(data);
