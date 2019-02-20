@@ -1,11 +1,6 @@
 #!/usr/local/bin/perl -w
 #!/usr/bin/perl -w
-# grep 1539644788363461 frames-echo-1539644788248291.json | tail -1 | encode-mock.pl > frames-mock.json
-
-## roundtrip fixed-point:
-# grep 1539644788363461 frames-echo-1539644788248291.json | tail -1 | encode-mock.pl | tail -1 > /tmp/rt
-# encode-mock.pl /tmp/rt | tail -1 > /tmp/rt2
-# cmp /tmp/rt*
+# synth-ping.pl -config=blueprint-sim.json -machine=Ted -delay=0
 
 use 5.010;
 use strict;
@@ -24,7 +19,25 @@ my $ua = HTTP::Tiny->new;
 
 # --
 
-# my $echo_payload = { tree => $dash_guid, id => $id, seqno => $seq_no };
+my $endl = "\n";
+my $dquot = '"';
+my $blank = ' ';
+
+my $machine_name;
+my $delay = 1;
+
+my $cfile;
+$cfile = 'blueprint-sim.json';
+$cfile = 'blueprint-triangle.json';
+
+read_config($cfile);
+
+foreach my $arg (@ARGV) {
+    if ($arg =~ /-config=/) { my ($a, $b) = split('=', $arg); read_config($b); next; }
+    if ($arg =~ /-machine=/) { my ($a, $b) = split('=', $arg); $machine_name=$b; next; }
+    if ($arg =~ /-delay=/) { my ($a, $b) = split('=', $arg); $delay=$b; next; }
+    # process_file($arg);
+}
 
 # --
 
@@ -72,25 +85,17 @@ my $template_msg = decode_json('{
 }
 }');
 
+echo_task();
+exit 0;
+
+# --
+
 sub build_id {
     my ($name, $dash_guid) = @_;
     my $id_obj = { name => $name, uuid => { uuid => $dash_guid } };
     # my $id = JSON->new->canonical->encode($id_obj);
     return $id_obj;
 }
-
-# --
-
-my $endl = "\n";
-my $dquot = '"';
-my $blank = ' ';
-
-# FIXME:
-my $cfile;
-$cfile = 'blueprint-triangle.json';
-$cfile = 'blueprint-sim.json';
-
-read_config($cfile);
 
 ## when msg_type is 'Application' - payload :
 
@@ -101,8 +106,7 @@ read_config($cfile);
 ## $serialized_msg->{payload} : { tree_id - body }
 # $payload->{body} : array[u8]-coded text
 
-my $delay = 1;
-{
+sub echo_task {
     my $dash_guid = '4000e4c0-929a-46ad-8243-8ab8b0629b5d';
     my $id = 1;
     my $seq_no = 1;
@@ -113,21 +117,20 @@ my $delay = 1;
         sleep($delay) if $delay;
     }
 }
-exit 0;
-
-while (<>) {
-    my $line = $_;
-    my $pe_op = decode_json($line);
-    pe_process($pe_op);
-
-    # next unless $line =~ m/^.*"bytes":"([^"]*)".*$/; # for cellagent trace output
-    # next unless $line =~ m/^.*"frame":"([^"]*)".*$/; # for trace-analyzer frameseq output
-    # my $raw_frame = $1;
-}
-
-exit 0;
 
 # --
+
+sub process_file {
+    my ($path) = @_;
+    my $gzip = $path =~ m/.gz$/;
+    my $openspec = ($gzip) ?  'gunzip -c '.$path.'|' : '<'.$path;
+    open(FD, $openspec) or die $path.': '.$!;
+    while (<FD>) {
+        my $json_text = $_;
+        my $pe_op = decode_json($json_text);
+        pe_process($pe_op);
+    }
+}
 
 sub pe_process {
     my ($pe_op) = @_;
