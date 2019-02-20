@@ -470,6 +470,7 @@ var processCellAgent = (function() {
 // Hello - JSON : { verb nickname guid sector }
 
 function xmit(port, msg_type) {
+try {
     var obj = JSON.parse(msg_type);
     var verb = obj.verb;
     var ca_line = ''
@@ -481,8 +482,13 @@ function xmit(port, msg_type) {
         ;
     $('#port'+port).append(port_line);
 }
+catch (e) {
+    console.log('xmit', 'error: ' + e, msg_type);
+}
+}
 
 function recv(port, msg_type) {
+try {
     var obj = JSON.parse(msg_type);
     var verb = obj.verb;
     var ca_line = ''
@@ -493,6 +499,10 @@ function recv(port, msg_type) {
             + '<br/>' + '<font color="blue">recv:</font> ' + verb
         ;
         $('#port'+port).append(port_line);
+}
+catch (e) {
+    console.log('xmit', 'error: ' + e, msg_type);
+}
 }
 
 // =============================== the real stuff

@@ -171,7 +171,7 @@ try {
     res.send('POST port ...' + JSON.stringify(req.params));
 }
 catch (e) {
-    console.log('error: ' + e, 'msg_type:', msg_type);
+    console.log('POST port', 'error: ' + e, 'msg_type:', msg_type);
 }
 });
 
@@ -338,7 +338,7 @@ var receiveListener = function (data) {
             noteDequeue(obj);
             echoServer(obj);
         } catch (e) {
-            console.log('error: ' + e, 'raw:', json_txt);
+            console.log('receiveListener', 'error: ' + e, 'raw:', json_txt);
         }
     }
 };
@@ -462,7 +462,7 @@ try {
     adapterWrite(deviceName, msg_type);
 }
 catch (e) {
-    console.log('error: ' + e, 'msg_type:', msg_type);
+    console.log('echoServer', 'error: ' + e, 'msg_type:', msg_type);
 }
 };
 
