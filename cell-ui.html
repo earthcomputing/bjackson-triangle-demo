@@ -470,9 +470,15 @@ var processCellAgent = (function() {
 // Hello - JSON : { verb nickname guid sector }
 
 function xmit(port, msg_type) {
-try {
-    var obj = JSON.parse(msg_type);
-    var verb = obj.verb;
+    var verb;
+    try {
+        var obj = JSON.parse(msg_type);
+        verb = obj.verb;
+    }
+    catch (e) {
+        console.log('xmit', 'error: ' + e, msg_type);
+        verb = msg_type;
+    }
     var ca_line = ''
         + '<br/>' + ' port: ' + port + ' <font color="red">xmit:</font> ' + verb
     ;
@@ -482,15 +488,17 @@ try {
         ;
     $('#port'+port).append(port_line);
 }
-catch (e) {
-    console.log('xmit', 'error: ' + e, msg_type);
-}
-}
 
 function recv(port, msg_type) {
-try {
-    var obj = JSON.parse(msg_type);
-    var verb = obj.verb;
+    var verb;
+    try {
+        var obj = JSON.parse(msg_type);
+        verb = obj.verb;
+    }
+    catch (e) {
+        console.log('recv', 'error: ' + e, msg_type);
+        verb = msg_type;
+    }
     var ca_line = ''
         + '<br/>' + ' port: ' + port + ' <font color="blue">recv:</font> ' + verb
     ;
@@ -499,10 +507,6 @@ try {
             + '<br/>' + '<font color="blue">recv:</font> ' + verb
         ;
         $('#port'+port).append(port_line);
-}
-catch (e) {
-    console.log('xmit', 'error: ' + e, msg_type);
-}
 }
 
 // =============================== the real stuff
