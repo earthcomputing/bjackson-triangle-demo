@@ -46,7 +46,7 @@ foreach my $fname (@ARGV) {
     process_file($fname);
 }
 
-# JSON : { ait_code epoch frame msg_id msg_type outbound pe_id tree } # w/added nickname
+# packet-seq - JSON : { ait_code epoch frame msg_id msg_type outbound pe_id tree } # w/added nickname
 # phy enqueue C:1 1 TOCK 0x400074367c704351baf6176ffc4e1b6a msg_id=1835423081272486972 7b226d7367... ;
 sub process_file {
     my ($path) = @_;
@@ -144,6 +144,7 @@ sub pe_process {
         # payload: cell_id port_no
         my ($cname, $cguid) = parts($payload->{cell_id});
         my $nick = $nicknames->{$cname}; $nick = '' unless defined $nick;
+        # Hello - JSON : { verb nickname guid sector }
         my $o = {
             'verb' => $msg_type,
             'nickname' => $nick,
@@ -155,6 +156,7 @@ sub pe_process {
 
     if ($msg_type eq 'Discover') {
         # payload : gvm_eqn hops path sending_cell_id tree_id
+        # Discover - JSON : { verb }
         my $o = {
             'verb' => $msg_type
         };
@@ -163,6 +165,7 @@ sub pe_process {
 
     if ($msg_type eq 'DiscoverD') {
         # payload : path senging_cell_id tree_id
+        # DiscoverD - JSON : { verb }
         my $o = {
             'verb' => $msg_type
         };
@@ -171,6 +174,7 @@ sub pe_process {
 
     if ($msg_type eq 'Manifest') {
         # payload : deploy_tree_id manifest tree_name
+        # Manifest - JSON : { verb }
         my $o = {
             'verb' => $msg_type
         };
@@ -179,6 +183,7 @@ sub pe_process {
 
     if ($msg_type eq 'StackTree') {
         # payload : allowed_tree gvm_eqn new_tree_id parent_tree_id
+        # StackTree - JSON : { verb }
         my $o = {
             'verb' => $msg_type
         };
@@ -187,6 +192,7 @@ sub pe_process {
 
     if ($msg_type eq 'StackTreeD') {
         # payload : tree_id
+        # StackTreeD - JSON : { verb }
         my $o = {
             'verb' => $msg_type
         };
@@ -195,6 +201,7 @@ sub pe_process {
 
     if ($msg_type eq 'Application') {
         # payload : body tree_id
+        # Application - JSON : { verb }
         my $o = {
             'verb' => $msg_type
         };
