@@ -156,7 +156,8 @@ app.post('/port/:port_id', function (req, res) {
     var msg_type = req.body.msg_type;
     if (config.trunc != 0) { console.log('xmit', 'POST', msg_type, 'port:', port, 'hint:', hint(port), 'frame:', frame.substr(config.trunc)); }
 
-// HACK
+try {
+    // HACK
     // verb - ...
     // msg_type - JSON : { verb }
     var obj = JSON.parse(msg_type);
@@ -168,6 +169,10 @@ app.post('/port/:port_id', function (req, res) {
 
     adapterWrite(port, msg_type);
     res.send('POST port ...' + JSON.stringify(req.params));
+}
+catch (e) {
+    console.log('error: ' + e, 'msg_type:', msg_type);
+}
 });
 
 // static char *port_name[NUM_INTERFACES] = { "enp6s0", "enp7s0", "enp8s0", "enp9s0" };
@@ -328,6 +333,8 @@ var receiveListener = function (data) {
 
             if (config.trunc != 0) { console.log('recv', 'READLOOP', recvTime, msg_type, 'port:', deviceName, 'hint:', hint(deviceName)); }
 
+            if (msg_type == ' ') continue;
+
             noteDequeue(obj);
             echoServer(obj);
         } catch (e) {
@@ -396,6 +403,7 @@ var echoServer = function(obj) {
 
     if (msg_type == undefined) { console.log('echoServer DEBUG:', obj); return; }
 
+try {
     // UN-HACK
     // verb - ...
     // echoServer - JSON : { verb }
@@ -452,6 +460,10 @@ var echoServer = function(obj) {
     // automated response:
     // adapterWrite(deviceName, 'R' + msg_type);
     adapterWrite(deviceName, msg_type);
+}
+catch (e) {
+    console.log('error: ' + e, 'msg_type:', msg_type);
+}
 };
 
 var connectionListener = function (socket) {
