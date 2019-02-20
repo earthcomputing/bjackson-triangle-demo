@@ -354,6 +354,7 @@ var attachSpinners = function() {
     });
 };
 
+// earth-update - JSON : { machineName deviceName linkState entlState entlCount AITSent AITRecieved }
 var processPacket = (function() {
     return function(packet) {
         var val = parseInt(packet.entlCount);
@@ -394,6 +395,7 @@ function dumper(frame) {
     return str;
 }
 
+// backdoor-update - JSON : { }
 var processBackdoor = (function() {
     return function(msg) {
         console.log('backdoor-update:', machineName, 'recv', msg);
@@ -424,6 +426,7 @@ var processBackdoor = (function() {
     };
 })();
 
+// cellagent-update - JSON : { port tree frame }
 var processCellAgent = (function() {
     return function(msg) {
         console.log('cellagent-update:', machineName, 'xmit', msg);
@@ -462,24 +465,31 @@ var processCellAgent = (function() {
     };
 })();
 
+// msg_type(s):
+// Hello - JSON : { verb nickname guid sector }
+
 function xmit(port, msg_type) {
+    var obj = JSON.parse(msg_type);
+    var verb = obj.verb;
     var ca_line = ''
-        + '<br/>' + ' port: ' + port + ' <font color="red">xmit:</font> ' + msg_type
+        + '<br/>' + ' port: ' + port + ' <font color="red">xmit:</font> ' + verb
     ;
     $('#cellAgentLog').append(ca_line);
         var port_line = ''
-            + '<br/>' + '<font color="red">xmit:</font> ' + msg_type
+            + '<br/>' + '<font color="red">xmit:</font> ' + verb
         ;
     $('#port'+port).append(port_line);
 }
 
 function recv(port, msg_type) {
+    var obj = JSON.parse(msg_type);
+    var verb = obj.verb;
     var ca_line = ''
-        + '<br/>' + ' port: ' + port + ' <font color="blue">recv:</font> ' + msg_type
+        + '<br/>' + ' port: ' + port + ' <font color="blue">recv:</font> ' + verb
     ;
     $('#cellAgentLog').append(ca_line);
         var port_line = ''
-            + '<br/>' + '<font color="blue">recv:</font> ' + msg_type
+            + '<br/>' + '<font color="blue">recv:</font> ' + verb
         ;
         $('#port'+port).append(port_line);
 }
@@ -488,25 +498,25 @@ function recv(port, msg_type) {
 
 var socket = io();
 
-// earth-update { machineName deviceName linkState entlState entlCount AITSent AITRecieved }
+// earth-update - JSON : { machineName deviceName linkState entlState entlCount AITSent AITRecieved }
 socket.on('earth-update', function(data) {
     data = JSON.parse(data.toString()); // why?
     processPacket(data);
 });
 
-// backdoor-update
+// backdoor-update - JSON : { }
 socket.on('backdoor-update', function(data) {
     // data = JSON.parse(data.toString()); // why not?
     processBackdoor(data);
 });
 
-// cellagent-update { port tree frame }
+// cellagent-update - JSON : { port tree frame }
 socket.on('cellagent-update', function(data) {
     // data = JSON.parse(data.toString()); // why not?
     processCellAgent(data);
 });
 
-// driver-update { port message }
+// driver-update - JSON : { port message }
 var sendPacket = function(source, msg) {
     var port = port2deviceName[source];
     var data = { 'message': msg, 'port': port };
