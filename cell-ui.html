@@ -371,10 +371,18 @@ var processPacket = (function() {
 
         $('#svg_' + port + ' circle').css({ fill: clr }); // d3.select('#svg_'+port+' circle').style('fill', clr );
 
-// FIXME: suppresses duplicates ??
+        try {
+            var obj = JSON.parse(msg_type);
+            verb = obj.verb;
+        }
+        catch (e) {
+            // console.log('recv', 'error: ' + e, msg_type);
+            verb = msg_type;
+        }
 
+// FIXME: suppresses duplicates ??
         if (p_messages[port] != msg) {
-            $('#recvBody_' + port).html(msg);
+            $('#recvBody_' + port).html(verb);
             $('#recv_' + port).css({ 'background-color': 'pink' });
             setTimeout(function() { $('#recv_' + port).css({ 'background-color': 'transparent' }); }, 1500);
             p_messages[port] = msg;
@@ -396,6 +404,14 @@ function dumper(frame) {
 }
 
 // backdoor-update - JSON : { inbound machineName msg_type pe_id xmit_now }
+    try {
+        var obj = JSON.parse(msg_type);
+        verb = obj.verb;
+    }
+    catch (e) {
+        // console.log('recv', 'error: ' + e, msg_type);
+        verb = msg_type;
+    }
 var processBackdoor = (function() {
     return function(msg) {
         console.log('backdoor-update:', machineName, 'recv', msg);
@@ -476,7 +492,7 @@ function xmit(port, msg_type) {
         verb = obj.verb;
     }
     catch (e) {
-        console.log('xmit', 'error: ' + e, msg_type);
+        // console.log('xmit', 'error: ' + e, msg_type);
         verb = msg_type;
     }
     var ca_line = ''
@@ -496,7 +512,7 @@ function recv(port, msg_type) {
         verb = obj.verb;
     }
     catch (e) {
-        console.log('recv', 'error: ' + e, msg_type);
+        // console.log('recv', 'error: ' + e, msg_type);
         verb = msg_type;
     }
     var ca_line = ''
