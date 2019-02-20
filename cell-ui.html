@@ -372,12 +372,12 @@ var processPacket = (function() {
         $('#svg_' + port + ' circle').css({ fill: clr }); // d3.select('#svg_'+port+' circle').style('fill', clr );
 
         try {
-            var obj = JSON.parse(msg_type);
+            var obj = JSON.parse(msg);
             verb = obj.verb;
         }
         catch (e) {
-            // console.log('recv', 'error: ' + e, msg_type);
-            verb = msg_type;
+            // console.log('recv', 'error: ' + e, msg);
+            verb = msg;
         }
 
 // FIXME: suppresses duplicates ??
