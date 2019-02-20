@@ -404,14 +404,6 @@ function dumper(frame) {
 }
 
 // backdoor-update - JSON : { inbound machineName msg_type pe_id xmit_now }
-    try {
-        var obj = JSON.parse(msg_type);
-        verb = obj.verb;
-    }
-    catch (e) {
-        // console.log('recv', 'error: ' + e, msg_type);
-        verb = msg_type;
-    }
 var processBackdoor = (function() {
     return function(msg) {
         console.log('backdoor-update:', machineName, 'recv', msg);
