@@ -66,6 +66,7 @@ app.all('/port/:port_id', function (req, res, next) {
 })
 
 // virtual 'recv' on link
+// /backdoor - JSON : req.body { }
 app.post('/backdoor/:port_id', function (req, res) {
     var port = req.params.port_id;
     backdoorUpdate(req.body);
@@ -98,7 +99,7 @@ app.post('/backdoor/:port_id', function (req, res) {
     noteDequeue(obj);
     echoServer(obj);
 
-    // machineName deviceName linkState entlState entlCount AITSent AITRecieved recvTime
+    // json_data[obj.machineName] - JSON : { machineName deviceName linkState entlState entlCount AITSent AITRecieved recvTime }
     var json_txt = JSON.stringify(obj);
 
     // ensure structure exists (multi-map)
@@ -110,6 +111,7 @@ app.post('/backdoor/:port_id', function (req, res) {
     res.send('POST backdoor ...' + JSON.stringify(req.params));
 });
 
+// /ifconfig - JSON : req.body { }
 app.post('/ifconfig/:port_id', function (req, res) {
     var port = req.params.port_id;
     // ifconfigUpdate();
@@ -121,6 +123,7 @@ app.post('/ifconfig/:port_id', function (req, res) {
     res.send('POST ifconfig ...' + JSON.stringify(req.params));
 });
 
+// /route - JSON : body { }
 app.post('/route/:port_id', function (req, res) {
     var port = req.params.port_id;
     // routeUpdate(req.body);
@@ -136,6 +139,7 @@ app.post('/route/:port_id', function (req, res) {
     res.send('POST route ...' + JSON.stringify(req.params));
 });
 
+// /port - JSON : body { ait_code epoch frame msg_id msg_type nickname outbound pe_id tree }
 app.post('/port/:port_id', function (req, res) {
     var port = req.params.port_id;
     cellAgentUpdate(req.body);
@@ -153,6 +157,7 @@ app.post('/port/:port_id', function (req, res) {
 
 // HACK
     // verb - ...
+    // msg_type - JSON : { verb }
     var obj = JSON.parse(msg_type);
 
     // fudge things here when route-repair:
@@ -171,22 +176,23 @@ function hint(port) {
     return nick;
 }
 
+// adapter stream - JSON : { port message }
 function adapterWrite(port, message) {
     last_ait[port] = message;
-    // var json_text = '{ \"port\": \"' + port + '\", \"message\":\"' + message + '\" }';
     var o = { 'port': port, 'message': message }
     var json_text = JSON.stringify(o);
     c_socket.write(json_text)
 }
 
 // backdoor-update - share with visualizers:
+// backdoor-update - JSON : req.body - { machineName pe_id inbound xmit_now msg_type }
 function backdoorUpdate(d) {
     if (config.verbose) console.log('backdoor-update:', d);
     io.emit('backdoor-update', d); // earth-update
 }
 
 // cellagent-update - share with visualizers
-// JSON : { ait_code epoch frame msg_id msg_type outbound pe_id tree } # w/added nickname
+// cellagent-update - JSON : { ait_code epoch frame msg_id msg_type outbound pe_id tree } # w/added nickname
 function cellAgentUpdate(d) {
     if (config.verbose) console.log('cellagent-update:', d);
     io.emit('cellagent-update', d);
@@ -249,6 +255,7 @@ var data = {
 };
 
 // earth-update - share with visualizers
+// earth-update - JSON : { machineName deviceName linkState entlState entlCount AITSent AITRecieved recvTime }
 function earthUpdate(data) {
     if (config.verbose) console.log(data);
     io.emit("earth-update", data);
@@ -276,7 +283,7 @@ var receiveListener = function (data) {
 
         // frame arrived (json, see toJSON, toServer in adapter.c)
         try {
-            // machineName deviceName linkState entlState entlCount AITSent AITRecieved recvTime
+            // adapter - JSON : { machineName deviceName linkState entlState entlCount AITSent AITRecieved recvTime }
             var obj = JSON.parse(json_txt);
             if (obj == undefined) continue;
 
@@ -390,6 +397,7 @@ var echoServer = function(obj) {
 
     // UN-HACK
     // verb - ...
+    // echoServer - JSON : { verb }
     var obj = JSON.parse(msg_type);
 
     if (obj.verb != 'ECHO') { return; }
@@ -424,7 +432,7 @@ var echoServer = function(obj) {
     var msg_id = 1; // trust this works!
 
     // log outbound (visualize)
-    // JSON : { ait_code epoch frame msg_id msg_type outbound pe_id tree } # w/added nickname
+    // cellAgentUpdate - JSON : { ait_code epoch frame msg_id msg_type outbound pe_id tree } # w/added nickname
     var neighbor_device = (xmit_port < slot2device.length) ? slot2device[recv_cell] : 'unknown'; // 'enp6s0'
     var nickname = hint(neighbor_device); // hostname for dest web server (eccf)
     var ca_msg = {
