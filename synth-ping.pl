@@ -250,8 +250,7 @@ sub echo_op {
     my $hex_guid = '0x'.$dash_guid; $hex_guid =~ s/-//g;
 
     my ($sec, $usec) = gettimeofday();
-    my $now  = ($sec * 1000 * 1000) + $usec;
-    my $epoch = $now; # '1539644788363461';
+    my $epoch  = ($sec * 1000 * 1000) + $usec; # '1539644788363461';
 
     my $msg_id = '171641756590852295';
 
