@@ -131,15 +131,16 @@ sub read_loop {
         next unless defined $json;
         $data = '';
 
+        ## adapter clock:
         my ($sec, $usec) = gettimeofday();
-        my $now  = ($sec * 1000 * 1000) + $usec;
+        my $adapter_now  = ($sec * 1000 * 1000) + $usec;
 
 # --
 
 ## FIXME : ensure 'message' is json !!
 
         my $port_id = $json->{port};
-        my $msg = $json->{message}; # $now.' '.
+        my $msg = $json->{message}; # $adapter_now.' '.
         print(join(' ', 'DEBUG:', $port_id, $msg, $dquot.$data.$dquot, Dumper $json), $endl) if $DEBUG;
 
         my $port = invert_port($port_id);
@@ -162,14 +163,14 @@ sub read_loop {
             pe_id => $pe_id,
             inbound => $n_port,
             machineName => $nick,
-            xmit_now => $now,
+            xmitTime => $adapter_now,
             msg_type => $msg
         };
         cross_read($o);
 
-        print(join(' ', $leading, $endpoint, $dest, $bias, $now, $dquot.$msg.$dquot), $endl);
+        print(join(' ', $leading, $endpoint, $dest, $bias, $adapter_now, $dquot.$msg.$dquot), $endl);
 
-        # my $hdx = $now." ok".$endl;
+        # my $hdx = $adapter_now." ok".$endl;
         # $csock->send($hdx); ## when debugging - echo input
     }
 }
@@ -247,7 +248,7 @@ sub cross_read {
 
     print(join(' ', $leading, 'phy enqueue',
         $nick , $cell_id, $port,
-        # $o->{xmit_now}, 
+        # $o->{xmitTime}, 
         $dquot.$o->{msg_type}.$dquot,
         '; '
     ));
