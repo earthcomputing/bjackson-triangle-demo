@@ -406,11 +406,18 @@ var echoServer = function(obj) {
 
     if (msg_type == undefined) { console.log('echoServer DEBUG:', obj); return; }
 
-try {
     // UN-HACK
     // verb - ...
     // echoServer - JSON : { verb }
-    var obj = JSON.parse(msg_type);
+    var obj;
+    try {
+        obj = JSON.parse(msg_type);
+    }
+    catch (e) {
+        // old simple msg goes thru this code path
+        if (config.verbose) console.log('echoServer', 'error: ' + e, 'msg_type:', msg_type);
+        return;
+    }
 
     if (obj.verb != 'ECHO') { return; }
 
@@ -463,10 +470,6 @@ try {
     // automated response:
     // adapterWrite(deviceName, 'R' + msg_type);
     adapterWrite(deviceName, msg_type);
-}
-catch (e) {
-    console.log('echoServer', 'error: ' + e, 'msg_type:', msg_type);
-}
 };
 
 var connectionListener = function (socket) {
