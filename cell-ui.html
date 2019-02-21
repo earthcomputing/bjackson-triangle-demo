@@ -101,8 +101,8 @@ outbound: <input id='AITMsgBody' class='med'/>
 </div>
  
 <!-- injected operation -->
-<div id='cellAgentRecv' class='frame'> ABCD </div>
-<div id='backdoorRecv' class='frame'> ABCD </div>
+<div id='cellagentUpdate' class='frame'> ABCD </div>
+<div id='backdoorUpdate' class='frame'> ABCD </div>
 
 <script>
 $("#tabs").tabs();
@@ -357,6 +357,7 @@ var attachSpinners = function() {
 // earth-update - JSON : { machineName deviceName linkState entlState entlCount AITSent AITRecieved }
 var processPacket = (function() {
     return function(packet) {
+// FIXME: earthUpdate event in DOM ??
         var val = parseInt(packet.entlCount);
         var port = deviceName2port[packet.deviceName];
         var entlState = packet.entlState;
@@ -403,7 +404,7 @@ function dumper(frame) {
     return str;
 }
 
-// backdoor-update - JSON : { inbound machineName msg_type pe_id xmit_now }
+// backdoor-update - JSON : { inbound machineName msg_type pe_id xmitTime }
 var processBackdoor = (function() {
     return function(msg) {
         console.log('backdoor-update:', machineName, 'recv', msg);
@@ -415,20 +416,20 @@ var processBackdoor = (function() {
         // var device_id = req.params.port_id;
         var cell_id = msg.pe_id;
         var port = msg.inbound;
-        var epoch = msg.xmit_now;
+        var xmitTime = msg.xmitTime;
         var msg_type = msg.msg_type;
 
         var content = '<b class="med">'
                 + '<p/>'
             + '<br/>' + msg_type
             + '<br/>' + ' port: ' + port
-            + '<br/>' + ' epoch: ' + epoch
+            + '<br/>' + ' xmitTime: ' + xmitTime
                 + '</b>'
                 + '<p/>'
             + '<br/>' + ' cell_id: ' + cell_id
             + '<br/>' + ' machineName: ' + machineName
         ;
-        $('#backdoorRecv').html(content);
+        $('#backdoorUpdate').html(content);
 
         recv(port, msg_type);
     };
@@ -468,7 +469,7 @@ var processCellAgent = (function() {
             + '<br/>' + ' frame: '
                 + '<br/>' + '<pre>' + dumper(frame) + '</pre>'
         ;
-        $('#cellAgentRecv').html(content);
+        $('#cellagentUpdate').html(content);
 
         xmit(port, msg_type);
     };
@@ -527,7 +528,7 @@ socket.on('earth-update', function(data) {
     processPacket(data);
 });
 
-// backdoor-update - JSON : { inbound machineName msg_type pe_id xmit_now }
+// backdoor-update - JSON : { inbound machineName msg_type pe_id xmitTime }
 socket.on('backdoor-update', function(data) {
     // data = JSON.parse(data.toString()); // why not?
     processBackdoor(data);
@@ -540,10 +541,13 @@ socket.on('cellagent-update', function(data) {
     processCellAgent(data);
 });
 
+// socket.on('route-update', ...
+
 // driver-update - JSON : { port message }
 var sendPacket = function(source, msg) {
     var port = port2deviceName[source];
     var data = { 'message': msg, 'port': port };
+    console.log('aitMessage:', machineName, 'sendPacket', data);
     socket.emit('aitMessage', data);
 };
 
@@ -552,7 +556,7 @@ function sendMessage(formi, i) {
     var message = formi.inputbox.value;
     formi.inputbox.value = '';
     var data = { 'message': message, 'port': i };
-    console.log(data);
+    console.log('aitMessage:', machineName, 'sendMessage', data);
     console.log(socket);
     socket.emit('aitMessage', data);
 }

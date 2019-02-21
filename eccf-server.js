@@ -66,7 +66,7 @@ app.all('/port/:port_id', function (req, res, next) {
 })
 
 // virtual 'recv' on link
-// backdoor JSON : req.body - { inbound machineName msg_type pe_id xmit_now }
+// backdoor JSON : req.body - { inbound machineName msg_type pe_id xmitTime }
 app.post('/backdoor/:port_id', function (req, res) {
     var port = req.params.port_id;
     backdoorUpdate(req.body);
@@ -80,10 +80,12 @@ app.post('/backdoor/:port_id', function (req, res) {
     var machineName = req.body.machineName;
     var pe_id = req.body.pe_id;
     var inbound = req.body.inbound;
-    var xmit_now = req.body.xmit_now;
+    var xmitTime = req.body.xmitTime; // adapter clock
     var msg_type = req.body.msg_type;
 
-    if (config.trunc != 0) { console.log('recv', 'POST', xmit_now, msg_type, 'port:', port, 'hint:', hint(port)); }
+    var server_now = Date.now() * 1000.0; // server clock
+
+    if (config.trunc != 0) { console.log('recv', 'POST', xmitTime, msg_type, 'port:', port, 'hint:', hint(port)); }
 
     var obj = {
         machineName: machineName,
@@ -92,7 +94,7 @@ app.post('/backdoor/:port_id', function (req, res) {
         // entlState:
         // entlCount:
         // AITSent:
-        recvTime: xmit_now,
+        recvTime: xmitTime,
         AITRecieved: msg_type
     };
 
@@ -191,7 +193,7 @@ function adapterWrite(port, message) {
 }
 
 // backdoor-update - share with visualizers:
-// backdoor-update - JSON : req.body - { inbound machineName msg_type pe_id xmit_now }
+// backdoor-update - JSON : req.body - { inbound machineName msg_type pe_id xmitTime }
 function backdoorUpdate(d) {
     if (config.verbose) console.log('backdoor-update:', d);
     io.emit('backdoor-update', d); // earth-update
@@ -282,10 +284,7 @@ var receiveListener = function (data) {
         var json_txt = lines[i];
         if (isBlank(json_txt)) continue;
 
-        var last_msg = {
-            msg_type: '',
-            recv_time: Date.now() * 1000.0
-        };
+        var last_msg = {};
 
         // frame arrived (json, see toJSON, toServer in adapter.c)
         try {
@@ -304,6 +303,7 @@ var receiveListener = function (data) {
             // ensure structure exists (multi-map)
             if (!json_data[obj.machineName]) { json_data[obj.machineName] = {}; }
             if (!last_state[obj.machineName]) { last_state[obj.machineName] = {}; }
+            if (!last_msg[obj.machineName]) { last_msg[obj.machineName] = {}; }
 
             // hang onto line for debugging
             json_data[obj.machineName][obj.deviceName] = json_txt;
@@ -324,12 +324,15 @@ var receiveListener = function (data) {
             var deviceName = obj.deviceName;
             var msg_type = obj.AITRecieved;
             var recvTime = obj.recvTime;
-            // var now = Date.now() * 1000.0; // (new Date).getTime();
 
-            if (recvTime == last_msg.recv_time) continue; // suppress duplication from polling loop
-            last_msg.recv_time = recvTime;
-            last_msg.msg_type = msg_type;
-            // could just as easily save 'obj'
+            var prev = last_msg[obj.machineName][obj.deviceName];
+            if (prev != undefined && recvTime == prev.recv_time) {
+                continue; // suppress duplication from polling loop
+            }
+
+            prev.recv_time = recvTime;
+            prev.msg_type = msg_type;
+            last_msg[obj.machineName][obj.deviceName] = prev;
 
             if (config.trunc != 0) { console.log('recv', 'READLOOP', recvTime, msg_type, 'port:', deviceName, 'hint:', hint(deviceName)); }
 
@@ -372,13 +375,13 @@ var host2cell = {
 */
 
 // fudge things here:
-// { AITRecieved, deviceName }
+// { AITRecieved, deviceName recvTime }
 var noteDequeue = function(obj) {
+    var recvTime = obj.recvTime;
     var msg_type = obj.AITRecieved;
     var deviceName = obj.deviceName;
     var port_index = device2slot[deviceName]; if (port_index == null) port_index = 100; // 'bogus';
     var url = 'http://localhost:' + s_port + '/backdoor/' + deviceName;
-    var now = Date.now() * 1000.0; // (new Date).getTime();
 
     // hardwired knowledge of demo config
     var recv_cell = host2cell[hostname]; if (recv_cell == null) recv_cell = 50; // 'bogus';
@@ -391,8 +394,8 @@ var noteDequeue = function(obj) {
     var xmit_phy = 'C:' + xmit_cell;
     var dest = 'C' + recv_cell + 'p' + recv_port;
     var src = 'C' + xmit_cell + 'p' + xmit_port;
-    console.log('   ', 'phy dequeue', hostname, recv_phy, port_index, now, '"' + msg_type + '"', ';', url, 'status=200');
-    console.log('   ', src, dest, bias, now, '"' + msg_type + '"');
+    console.log('   ', 'phy dequeue', hostname, recv_phy, port_index, recvTime, '"' + msg_type + '"', ';', url, 'status=200');
+    console.log('   ', src, dest, bias, recvTime, '"' + msg_type + '"');
 };
 
 // fudge things here:
@@ -425,7 +428,7 @@ try {
     // mini routing table here
     var port = 0;
 
-    var now = Date.now() * 1000.0;
+    var server_now = Date.now() * 1000.0; // server clock
     var port_index = device2slot[deviceName]; if (port_index == null) port_index = 100; // 'bogus';
 
     // hardwired knowledge of demo config
@@ -446,7 +449,7 @@ try {
     var nickname = hint(neighbor_device); // hostname for dest web server (eccf)
     var ca_msg = {
         'ait_code': 'NORMAL',
-        'epoch': now,
+        'epoch': server_now,
         'frame': frame,
         'msg_id': msg_id,
         'msg_type': msg_type,
