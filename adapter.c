@@ -39,7 +39,7 @@ typedef struct link_device {
 
 char *entlStateString[] = { "IDLE", "HELLO", "WAIT", "SEND", "RECEIVE", "AM", "BM", "AH", "BH", "ERROR" };
 
-static long now() {
+static long adapter_now() {
     struct timeval t;
     int rc  = gettimeofday(&t, NULL);
     long epoch = (t.tv_sec * 1000 * 1000) + t.tv_usec;
@@ -195,7 +195,7 @@ static void init_link(link_device_t *l, char *port_id) {
     l->entlState = 100; // unknown
     snprintf(l->AITMessageS, MAX_AIT_MESSAGE_SIZE, " ");
     snprintf(l->AITMessageR, MAX_AIT_MESSAGE_SIZE, " ");
-    l->recvTime = now();
+    l->recvTime = adapter_now();
 }
 
 static int entt_read_ait(struct ifreq *req, struct entt_ioctl_ait_data *atomic_msg) {
@@ -320,7 +320,7 @@ static void entl_ait_sig_handler(int signum) {
 
         // FIXME: string/binary ambiguity
         // what if atomic_msg->data is missing NUL ??
-        l->recvTime = now();
+        l->recvTime = adapter_now();
         memcpy(l->AITMessageR, atomic_msg->data, atomic_msg->message_len);
         toJSON(l);
         toServer(l->json);
