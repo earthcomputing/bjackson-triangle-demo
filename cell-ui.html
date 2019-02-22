@@ -72,15 +72,15 @@ outbound: <input id='AITMsgBody' class='med'/>
 <h3 id='logs'>logs:</h3>
 <div id="tabs">
   <ul>
-    <li><a href="#port-0"><span>CellAgent</span></a></li>
+    <li><a href="#port-0"><span>Phy</span></a></li>
     <li><a href="#port-1"><span>Port #1 (enp6)</span></a></li>
     <li><a href="#port-2"><span>Port #2 (enp8)</span></a></li>
     <li><a href="#port-3"><span>Port #3 (enp9)</span></a></li>
     <li><a href="#port-4"><span>Port #4 (enp7)</span></a></li>
   </ul>
   <div id="port-0">
-    cell agent messages:
-    <div id='cellAgentLog' style="overflow-y: scroll; height:400px;"> </div>
+    packet engine messages:
+    <div id='phyLog' style="overflow-y: scroll; height:400px;"> </div>
   </div>
   <div id="port-1">
     port 1: enp6
@@ -103,6 +103,7 @@ outbound: <input id='AITMsgBody' class='med'/>
 <!-- injected operation -->
 <div id='cellagentUpdate' class='frame'> ABCD </div>
 <div id='backdoorUpdate' class='frame'> ABCD </div>
+<div id='earthUpdate' class='frame'> ABCD </div>
 
 <script>
 $("#tabs").tabs();
@@ -357,7 +358,6 @@ var attachSpinners = function() {
 // earth-update - JSON : { machineName deviceName linkState entlState entlCount AITSent AITRecieved }
 var processPacket = (function() {
     return function(packet) {
-// FIXME: earthUpdate event in DOM ??
         var val = parseInt(packet.entlCount);
         var port = deviceName2port[packet.deviceName];
         var entlState = packet.entlState;
@@ -381,14 +381,19 @@ var processPacket = (function() {
             verb = msg;
         }
 
-// FIXME: suppresses duplicates ??
         if (p_messages[port] != msg) {
             $('#recvBody_' + port).html(verb);
             $('#recv_' + port).css({ 'background-color': 'pink' });
             setTimeout(function() { $('#recv_' + port).css({ 'background-color': 'transparent' }); }, 1500);
             p_messages[port] = msg;
-            recv(port, msg) // append to log
+            recv(port, msg); // append to log
         }
+
+        var json_text = JSON.stringify(packet, null, 4);
+        var content = '<b class="med">state:</b>'
+            + '<br/>' + '<pre>' + json_text + '</pre>'
+        ;
+        $('#earthUpdate').html(content);
     };
 })();
 
@@ -413,25 +418,14 @@ var processBackdoor = (function() {
             return;
         }
 
-        // var device_id = req.params.port_id;
-        var cell_id = msg.pe_id;
-        var port = msg.inbound;
-        var xmitTime = msg.xmitTime;
-        var msg_type = msg.msg_type;
-
-        var content = '<b class="med">'
-                + '<p/>'
-            + '<br/>' + msg_type
-            + '<br/>' + ' port: ' + port
-            + '<br/>' + ' xmitTime: ' + xmitTime
-                + '</b>'
-                + '<p/>'
-            + '<br/>' + ' cell_id: ' + cell_id
-            + '<br/>' + ' machineName: ' + machineName
+        var json_text = JSON.stringify(msg, null, 4);
+        var content = '<b class="med">recv:</b>'
+            + '<br/>' + '<pre>' + json_text + '</pre>'
         ;
         $('#backdoorUpdate').html(content);
 
-        recv(port, msg_type);
+        var port = msg.inbound;
+        recv(port, msg.msg_type);
     };
 })();
 
@@ -445,33 +439,17 @@ var processCellAgent = (function() {
             return;
         }
 
-        var epoch = msg.epoch;
-        var cell_id = msg.pe_id;
-        var port = msg.outbound;
-        var tree = msg.tree;
         var frame = msg.frame;
-        var ait_code = msg.ait_code;
-        var msg_id = msg.msg_id;
-        var msg_type = msg.msg_type;
-
-        var content = '<b class="med">'
-                + '<p/>'
-            + '<br/>' + msg_type
-            + '<br/>' + ' port: ' + port
-            + '<br/>' + ' tree: ' + tree
-            + '<br/>' + ' epoch: ' + epoch
-            + '<br/>' + ' msg_id: ' + msg_id
-                + '</b>'
-                + '<p/>'
-            + '<br/>' + ' cell_id: ' + cell_id
-            + '<br/>' + ' machineName: ' + machineName
-            + '<br/>' + ' ait_code: ' + ait_code
-            + '<br/>' + ' frame: '
-                + '<br/>' + '<pre>' + dumper(frame) + '</pre>'
+        msg.frame = '...';
+        var json_text = JSON.stringify(msg, null, 4);
+        var content = '<b class="med">xmit:</b>'
+            + '<br/>' + '<pre>' + json_text + '</pre>'
+            + '<br/>' + '<pre>' + dumper(frame) + '</pre>'
         ;
         $('#cellagentUpdate').html(content);
 
-        xmit(port, msg_type);
+        var port = msg.outbound;
+        xmit(port, msg.msg_type);
     };
 })();
 
@@ -491,7 +469,7 @@ function xmit(port, msg_type) {
     var ca_line = ''
         + '<br/>' + ' port: ' + port + ' <font color="red">xmit:</font> ' + verb
     ;
-    $('#cellAgentLog').append(ca_line);
+    $('#phyLog').append(ca_line);
         var port_line = ''
             + '<br/>' + '<font color="red">xmit:</font> ' + verb
         ;
@@ -511,7 +489,7 @@ function recv(port, msg_type) {
     var ca_line = ''
         + '<br/>' + ' port: ' + port + ' <font color="blue">recv:</font> ' + verb
     ;
-    $('#cellAgentLog').append(ca_line);
+    $('#phyLog').append(ca_line);
         var port_line = ''
             + '<br/>' + '<font color="blue">recv:</font> ' + verb
         ;
