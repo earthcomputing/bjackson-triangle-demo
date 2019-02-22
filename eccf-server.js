@@ -22,6 +22,11 @@ var alt_route = {};
 var connected = 0;
 var c_socket;
 
+// link status
+var port_status = {};
+// routing table
+var router = {};
+
 var config = {
     "trunc" : -30,
     "verbose" : false,
@@ -116,29 +121,37 @@ app.post('/backdoor/:port_id', function (req, res) {
 // /ifconfig - JSON : req.body { epoch pe_id uuid port_no is_border status }
 app.post('/ifconfig/:port_id', function (req, res) {
     var port = req.params.port_id;
-    // ifconfigUpdate();
+    ifconfigUpdate(req.body);
     if (config.verbose) console.log('POST ifconfig ...',
         '\nheaders:', req.headers,
         '\nbody:', req.body
     );
 
-    res.send('POST ifconfig ...' + JSON.stringify(req.params));
+    // if (hostname != req.body.nickname) { error!! }
+    port_status[req.body.port_no] = req.body;
+    if (config.trunc != 0) { console.log('ifconfig', 'POST', req.body.epoch, 'port:', port, 'hint:', req.body.nickname, 'border:', req.body.is_border, 'status:', req.body.status); }
+
+    res.send('POST ifconfig ...' + JSON.stringify({parms: req.params, body: req.body}));
 });
 
 // /route - JSON : req.body { epoch pe_id op tree in_use may_send parent mask }
-app.post('/route/:port_id', function (req, res) {
-    var port = req.params.port_id;
-    // routeUpdate(req.body);
+app.post('/route/:tree', function (req, res) {
+    var tree = req.params.tree;
+    routeUpdate(req.body);
     if (config.verbose) console.log('POST route ...',
         '\nheaders:', req.headers,
         '\nbody:', req.body
     );
 
+    // if (hostname != req.body.nickname) { error!! }
+    router[tree] = req.body;
+    if (config.trunc != 0) { console.log('route', 'POST', req.body.epoch, 'tree:', tree, 'op:', req.body.op, 'in_use:', req.body.in_use, 'may_send:', req.body.may_send, 'parent:', req.body.parent, 'mask:', req.body.mask); }
+
     // var redirect = req.body.alt_route;
     // if (config.trunc != 0) { console.log('route', 'POST', 'port:', port, 'redirect', redirect); }
     // alt_route[port] = redirect;
 
-    res.send('POST route ...' + JSON.stringify(req.params));
+    res.send('POST route ...' + JSON.stringify({parms: req.params, body: req.body}));
 });
 
 // from packet-seq (augmented w/nickname
@@ -192,18 +205,30 @@ function adapterWrite(port, message) {
     c_socket.write(json_text)
 }
 
-// backdoor-update - share with visualizers:
+// *-update - share with visualizers:
+
 // backdoor-update - JSON : req.body - { inbound machineName msg_type pe_id xmitTime }
 function backdoorUpdate(d) {
     if (config.verbose) console.log('backdoor-update:', d);
     io.emit('backdoor-update', d); // earth-update
 }
 
-// cellagent-update - share with visualizers
 // cellagent-update - JSON : { ait_code epoch frame msg_id msg_type outbound pe_id tree } # w/added nickname
 function cellAgentUpdate(d) {
     if (config.verbose) console.log('cellagent-update:', d);
     io.emit('cellagent-update', d);
+}
+
+// ifconfig-update - JSON : req.body { epoch pe_id uuid port_no is_border status }
+function ifconfigUpdate(d) {
+    if (config.verbose) console.log('ifconfig-update:', d);
+    io.emit('ifconfig-update', d);
+}
+
+// route-update - JSON : req.body { epoch pe_id op tree in_use may_send parent mask }
+function routeUpdate(d) {
+    if (config.verbose) console.log('route-update:', d);
+    io.emit('route-update', d);
 }
 
 app.get('/port/:port_id', function (req, res) {
