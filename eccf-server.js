@@ -355,6 +355,7 @@ var receiveListener = function (data) {
                 continue; // suppress duplication from polling loop
             }
 
+            if (prev == undefined) { prev = {}; }
             prev.recv_time = recvTime;
             prev.msg_type = msg_type;
             last_msg[obj.machineName][obj.deviceName] = prev;
