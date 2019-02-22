@@ -113,7 +113,7 @@ app.post('/backdoor/:port_id', function (req, res) {
     res.send('POST backdoor ...' + JSON.stringify(req.params));
 });
 
-// /ifconfig - JSON : req.body { }
+// /ifconfig - JSON : req.body { epoch pe_id uuid port_no is_border status }
 app.post('/ifconfig/:port_id', function (req, res) {
     var port = req.params.port_id;
     // ifconfigUpdate();
@@ -125,7 +125,7 @@ app.post('/ifconfig/:port_id', function (req, res) {
     res.send('POST ifconfig ...' + JSON.stringify(req.params));
 });
 
-// /route - JSON : body { }
+// /route - JSON : req.body { epoch pe_id op tree in_use may_send parent mask }
 app.post('/route/:port_id', function (req, res) {
     var port = req.params.port_id;
     // routeUpdate(req.body);
@@ -134,10 +134,10 @@ app.post('/route/:port_id', function (req, res) {
         '\nbody:', req.body
     );
 
-    var redirect = req.body.alt_route;
-    if (config.trunc != 0) { console.log('route', 'POST', 'port:', port, 'redirect', redirect); }
+    // var redirect = req.body.alt_route;
+    // if (config.trunc != 0) { console.log('route', 'POST', 'port:', port, 'redirect', redirect); }
+    // alt_route[port] = redirect;
 
-    alt_route[port] = redirect;
     res.send('POST route ...' + JSON.stringify(req.params));
 });
 
