@@ -445,11 +445,9 @@ var echoServer = function(obj) {
 
     if (obj.verb != 'ECHO') { return; }
 
-    // don't log non-echo requests
-    console.log('echoServer', obj);
-
     obj.verb = 'RECHO';
     msg_type = JSON.stringify(obj);
+    console.log('echoServer', msg_type);
 
     // fudge things here when route-repair:
     // jigger 'port' based upon routing table
