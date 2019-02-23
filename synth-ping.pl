@@ -30,11 +30,14 @@ my $cfile;
 $cfile = 'blueprint-sim.json';
 $cfile = 'blueprint-triangle.json';
 
+my $NPACKET = 10;
+
 read_config($cfile);
 
 foreach my $arg (@ARGV) {
     if ($arg =~ /-config=/) { my ($a, $b) = split('=', $arg); read_config($b); next; }
     if ($arg =~ /-machine=/) { my ($a, $b) = split('=', $arg); $machine_name=$b; next; }
+    if ($arg =~ /-n=/) { my ($a, $b) = split('=', $arg); $NPACKET=$b; next; }
     if ($arg =~ /-delay=/) { my ($a, $b) = split('=', $arg); $delay=$b; next; }
     # process_file($arg);
 }
@@ -110,7 +113,7 @@ sub echo_task {
     my $dash_guid = '4000e4c0-929a-46ad-8243-8ab8b0629b5d';
     my $id = 1;
     my $seq_no = 1;
-    foreach my $seq_no (1..10) {
+    foreach my $seq_no (1..$NPACKET) {
         my $line = echo_op($dash_guid, $id, $seq_no);
         my $pe_op = decode_json($line);
         xmit_packet($pe_op);
