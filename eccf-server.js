@@ -16,8 +16,10 @@ const c_port = (process.argv.length > 4) ? process.argv[4] : 1337;
 console.log('hostname:', hostname, s_port, c_port);
 
 var last_ait = {};
-var last_state = {};
 var json_data = {};
+var last_state = {};
+var last_msg = {};
+
 var alt_route = {};
 var connected = 0;
 var c_socket;
@@ -309,8 +311,6 @@ var receiveListener = function (data) {
         var json_txt = lines[i];
         if (isBlank(json_txt)) continue;
 
-        var last_msg = {};
-
         // frame arrived (json, see toJSON, toServer in adapter.c)
         try {
             // adapter - JSON : { machineName deviceName linkState entlState entlCount AITSent AITRecieved recvTime }
@@ -337,7 +337,7 @@ var receiveListener = function (data) {
             last_state[obj.machineName][obj.deviceName] = obj.linkState;
 
             // I/O to spinner
-            if (!connected) continue;
+            // if (!connected) continue;
 
             // inline rather than earthUpdate()
             io.emit('earth-update', json_txt);
@@ -346,23 +346,21 @@ var receiveListener = function (data) {
             var toggled = !was_state || (was_state != obj.linkState);
             if (toggled || config.periodic) console.log('earth-update ' + json_txt);
 
-            var deviceName = obj.deviceName;
-            var msg_type = obj.AITRecieved;
-            var recvTime = obj.recvTime;
+            // recv state -> event logic
 
             var prev = last_msg[obj.machineName][obj.deviceName];
-            if (prev != undefined && recvTime == prev.recv_time) {
-                continue; // suppress duplication from polling loop
-            }
+            last_msg[obj.machineName][obj.deviceName] = obj;
 
-            if (prev == undefined) { prev = {}; }
-            prev.recv_time = recvTime;
-            prev.msg_type = msg_type;
-            last_msg[obj.machineName][obj.deviceName] = prev;
+            if ((prev != undefined) && (obj.recvTime == prev.recvTime) && (obj.AITRecieved == prev.AITRecieved)) continue;
 
-            if (config.trunc != 0) { console.log('recv', 'READLOOP', recvTime, msg_type, 'port:', deviceName, 'hint:', hint(deviceName)); }
+            // if (prev == undefined) { console.log('recv', 'READLOOP', obj.machineName, obj.deviceName, 'first time', obj); }
+            // else if (obj.recvTime != prev.recvTime) { console.log('recv', 'READLOOP', obj.machineName, obj.deviceName, 'time diff', prev.recvTime, obj.recvTime); }
+            // else if (obj.AITRecieved != prev.AITRecieved) { console.log('recv', 'READLOOP', obj.machineName, obj.deviceName, obj.recvTime, 'msg diff', prev.AITRecieved, obj.AITRecieved); }
+            // else continue; // suppress duplication from polling loop
 
-            if (msg_type == ' ') continue;
+            if (config.trunc != 0) { console.log('recv', 'READLOOP', obj.recvTime, obj.AITRecieved, 'port:', obj.deviceName, 'hint:', hint(obj.deviceName)); }
+
+            if (obj.AITRecieved == ' ') continue;
 
             noteDequeue(obj);
             echoServer(obj);
