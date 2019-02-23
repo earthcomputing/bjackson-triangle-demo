@@ -454,13 +454,21 @@ var processCellAgent = (function() {
 })();
 
 // msg_type(s):
-// Hello - JSON : { verb nickname guid sector }
+// Hello - JSON : { nickname guid sector }
+// ECHO - JSON : { tree id seqno }
+
+function compact(obj) {
+    if (obj.verb == 'ECHO' || obj.verb == 'RECHO') {
+        return obj.verb + ' ' + JSON.stringify({id: obj.id, seqno: obj.seqno});
+    }
+    return obj.verb;
+}
 
 function xmit(port, msg_type) {
     var verb;
     try {
         var obj = JSON.parse(msg_type);
-        verb = obj.verb;
+        verb = compact(obj);
     }
     catch (e) {
         // console.log('xmit', 'error: ' + e, msg_type);
@@ -480,7 +488,7 @@ function recv(port, msg_type) {
     var verb;
     try {
         var obj = JSON.parse(msg_type);
-        verb = obj.verb;
+        verb = compact(obj);
     }
     catch (e) {
         // console.log('recv', 'error: ' + e, msg_type);
