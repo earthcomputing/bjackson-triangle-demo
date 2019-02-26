@@ -26,6 +26,8 @@ var c_socket;
 
 // link status
 var port_status = {};
+// authenticated link partner
+var neighbor = {};
 // routing table
 var router = {};
 
@@ -136,6 +138,26 @@ app.post('/ifconfig/:port_id', function (req, res) {
     res.send('POST ifconfig ...' + JSON.stringify({parms: req.params, body: req.body}));
 });
 
+// /hello - JSON : req.body { epoch pe_id recv_port neighbor xmit_port }
+app.post('/hello/:port_id', function (req, res) {
+    var port = req.params.port_id;
+
+    // ugh - complex body
+    req.body = JSON.parse(req.body.json);
+
+    helloUpdate(req.body);
+    if (config.verbose) console.log('POST hello ...',
+        '\nheaders:', req.headers,
+        '\nbody:', req.body
+    );
+
+    // if (hostname != req.body.nickname) { error!! }
+    neighbor[req.body.port_no] = req.body;
+    if (config.trunc != 0) { console.log('hello', 'POST', req.body.epoch, 'port:', port, 'hint:', req.body.nickname, 'neighbor:', req.body.neighbor.hint, 'xmit_port:', req.body.xmit_port); }
+
+    res.send('POST hello ...' + JSON.stringify({parms: req.params, body: req.body}));
+});
+
 // /route - JSON : req.body { epoch pe_id op tree in_use may_send parent mask }
 app.post('/route/:tree', function (req, res) {
     var tree = req.params.tree;
@@ -225,6 +247,12 @@ function cellAgentUpdate(d) {
 function ifconfigUpdate(d) {
     if (config.verbose) console.log('ifconfig-update:', d);
     io.emit('ifconfig-update', d);
+}
+
+// hello-update - JSON : req.body { epoch pe_id* recv_port neighbor* xmit_port }
+function helloUpdate(d) {
+    if (config.verbose) console.log('hello-update:', d);
+    io.emit('hello-update', d);
 }
 
 // route-update - JSON : req.body { epoch pe_id op tree in_use may_send parent mask }
