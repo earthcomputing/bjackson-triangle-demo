@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl -w
 #!/usr/bin/perl -w
-# synth-ping.pl -config=blueprint-sim.json -machine=Ted -delay=0
+# synth-ping.pl -config=blueprint-sim.json -machine=Ted -delay=0 -n=5
 
 use 5.010;
 use strict;
