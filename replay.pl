@@ -42,19 +42,76 @@ if ( $#ARGV < 0 ) {
 
 read_config($cfile); # default, lazy could have complext logic to avoid this
 
+my %all_ops;
+
 foreach my $fname (@ARGV) {
     if ($fname =~ /-config=/) { my ($a, $b) = split('=', $fname); read_config($b); next; }
     if ($fname =~ /-delay=/) { my ($a, $b) = split('=', $fname); $delay=$b; next; }
     if ($fname =~ /-status=/) { my ($a, $b) = split('=', $fname); process_file('status', $b); next; }
     if ($fname =~ /-hello=/) { my ($a, $b) = split('=', $fname); process_file('hello', $b); next; }
     if ($fname =~ /-routes=/) { my ($a, $b) = split('=', $fname); process_file('routes', $b); next; }
+    if ($fname =~ /-frames=/) { my ($a, $b) = split('=', $fname); process_file('frames', $b); next; }
     process_file('frames', $fname);
 }
+
+process_ordered();
+exit 0;
+
+# --
 
 sub process_file {
     my ($kind, $path) = @_;
     my $gzip = $path =~ m/.gz$/;
-    my $openspec = ($gzip) ?  'gunzip -c '.$path.'|' : '<'.$path;
+    my $openspec = ($gzip) ? 'gunzip -c '.$path.'|' : '<'.$path;
+    # print($openspec, $endl);
+    open(FD, $openspec) or die $path.': '.$!;
+    while (<FD>) {
+        my $json_text = $_;
+        my $o = decode_json($json_text);
+        $o->{_kind} = $kind;
+
+        # ugh - frames contains duplicates (multicast)
+        my $epoch = $o->{epoch};
+        my $value = $all_ops{$epoch};
+        if (defined $value) {
+            # print(join(' ', 'dup', $epoch), $endl);
+            if (ref($value) ne 'ARRAY') {
+                $all_ops{$epoch} = [ $value ];
+            }
+            push @{$all_ops{$epoch}}, $o;
+            next;
+        }
+        $all_ops{$epoch} = $o;
+    }
+    close FD;
+}
+
+sub process_ordered {
+    foreach my $epoch (sort keys %all_ops) {
+        my $item = $all_ops{$epoch};
+        my $ary = (ref($item) eq 'ARRAY') ? $item : [ $item ];
+        foreach my $o (@{$ary}) {
+            print($epoch, ' '); # $endl);
+            my $kind = $o->{_kind}; delete $o->{_kind};
+            my $pe_id = $o->{pe_id};
+
+            my $nick = $nicknames->{$pe_id}; $nick = '' unless defined $nick;
+            $o->{nickname} = $nick;
+            $o->{nickname} = $pe_id->{hint} if ref($pe_id) eq 'HASH'; # evolve formats to this ??
+
+            do_frame($epoch, $pe_id, $o) if $kind eq 'frames';
+            do_status($epoch, $pe_id, $o) if $kind eq 'status';
+            do_hello($epoch, $pe_id, $o) if $kind eq 'hello';
+            do_routes($epoch, $pe_id, $o) if $kind eq 'routes';
+            sleep($delay) if $delay;
+        }
+    }
+}
+
+sub process_file_x {
+    my ($kind, $path) = @_;
+    my $gzip = $path =~ m/.gz$/;
+    my $openspec = ($gzip) ? 'gunzip -c '.$path.'|' : '<'.$path;
     open(FD, $openspec) or die $path.': '.$!;
     while (<FD>) {
         my $json_text = $_;
@@ -72,6 +129,7 @@ sub process_file {
         do_routes($epoch, $pe_id, $o) if $kind eq 'routes';
         sleep($delay) if $delay;
     }
+    close FD;
 }
 
 ## deserialize / unravel:
@@ -106,7 +164,7 @@ sub pe_process {
     # print(join(' ', '    TREE', $pe_op->{tree}, $payload->{tree_id}{uuid}{uuid}, $payload->{tree_id}{name}), $endl) if defined $payload->{tree_id};
 
     # sanity checking:
-    shape($msg_type, $pe_op, 'ait_code epoch frame msg_id msg_type outbound pe_id tree');
+    shape($msg_type, $pe_op, 'ait_code epoch frame msg_id msg_type nickname outbound pe_id tree');
     shape($msg_type, $frame, 'msg_type serialized_msg');
     shape($msg_type, $msg, 'header payload');
     shape($msg_type, $hdr, 'direction is_ait msg_count msg_type sender_id tree_map');
@@ -252,7 +310,6 @@ sub remap {
 sub do_frame {
     my ($epoch, $pe_id, $o) = @_;
     my $port = $o->{outbound};
-    my $url = port_api($pe_id, $port);
 
     # bogus records - workaround for analyzer bug
     unless (defined $o->{outbound}) {
@@ -260,6 +317,8 @@ sub do_frame {
         $o->{outbound} = -1;
         return;
     }
+
+    my $url = port_api($pe_id, $port);
 
     # embed verb + clean-payload into msg_type
     my $fo = pe_process($o);
