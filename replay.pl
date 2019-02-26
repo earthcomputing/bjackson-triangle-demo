@@ -1,7 +1,8 @@
 #!/usr/local/bin/perl -w
 #!/usr/bin/perl -w
 # python -mjson.tool
-# replay.pl -config=blueprint-sim.json -delay=1 -status=status.json -routes=routes.json
+# replay.pl -config=blueprint-sim.json -delay=1 -status=status.json -hello=hello.json -routes=routes.json -frames=frames-triamgle-1539644788248291.json.gz 
+# synth-ping.pl -config=blueprint-sim.json -machine=Ted -delay=0 -n=5
 
 use 5.010;
 use strict;
@@ -45,6 +46,7 @@ foreach my $fname (@ARGV) {
     if ($fname =~ /-config=/) { my ($a, $b) = split('=', $fname); read_config($b); next; }
     if ($fname =~ /-delay=/) { my ($a, $b) = split('=', $fname); $delay=$b; next; }
     if ($fname =~ /-status=/) { my ($a, $b) = split('=', $fname); process_file('status', $b); next; }
+    if ($fname =~ /-hello=/) { my ($a, $b) = split('=', $fname); process_file('hello', $b); next; }
     if ($fname =~ /-routes=/) { my ($a, $b) = split('=', $fname); process_file('routes', $b); next; }
     process_file('frames', $fname);
 }
@@ -62,9 +64,11 @@ sub process_file {
 
         my $nick = $nicknames->{$pe_id}; $nick = '' unless defined $nick;
         $o->{nickname} = $nick;
+        $o->{nickname} = $pe_id->{hint} if ref($pe_id) eq 'HASH'; # evolve formats to this ??
 
         do_frame($epoch, $pe_id, $o) if $kind eq 'frames';
         do_status($epoch, $pe_id, $o) if $kind eq 'status';
+        do_hello($epoch, $pe_id, $o) if $kind eq 'hello';
         do_routes($epoch, $pe_id, $o) if $kind eq 'routes';
         sleep($delay) if $delay;
     }
@@ -254,7 +258,7 @@ sub do_frame {
     unless (defined $o->{outbound}) {
         print(join(' ', 'BAD RECORD', $epoch, $pe_id, 'null', $o->{tree}, $o->{msg_type}), $endl);
         $o->{outbound} = -1;
-        next;
+        return;
     }
 
     # embed verb + clean-payload into msg_type
@@ -272,7 +276,7 @@ sub do_frame {
 
     unless (defined $url) {
         print($endl, join(' ', 'skipping -', $o->{nickname}, 'pe_id:', $pe_id, 'port:', $port), $endl);
-        next;
+        return;
     }
 
     # POST to /port
@@ -290,7 +294,7 @@ sub do_status {
 
     unless (defined $url) {
         print($endl, join(' ', 'skipping -', $o->{nickname}, 'pe_id:', $pe_id, 'port:', $port), $endl);
-        next;
+        return;
     }
 
     # POST to /port
@@ -298,6 +302,28 @@ sub do_status {
     my $response = $ua->post_form($url, $o);
     print('status=', $response->{'status'}, $endl);
 }
+
+# {"epoch":1539644788285304,"neighbor":{"hint":"Bob","name":"C:1","uuid":{"uuid":"4000ec78-5bab-4195-b7d3-0f4b10f4a260"}},"pe_id":{"hint":"Alice","name":"C:0","uuid":{"uuid":"400044de-7a1d-45bf-9a50-f68d23fe64ab"}},"recv_port":1,"xmit_port":1}
+# hello - JSON { epoch pe_id recv_port neighbor xmit_port }
+sub do_hello {
+    my ($epoch, $pe_id, $o) = @_;
+    my $code = $pe_id->{name};
+    my $port = $o->{recv_port};
+    my $url = hello_api($code, $port);
+
+    unless (defined $url) {
+        print($endl, join(' ', 'skipping -', $o->{nickname}, 'pe_id:', $code, 'port:', $port), $endl);
+        return;
+    }
+
+    my $json_text = JSON->new->canonical->encode($o);
+
+    # POST to /port
+    print($url, ' ');
+    my $response = $ua->post_form($url, { json => $json_text });
+    print('status=', $response->{'status'}, $endl);
+}
+
 
 # {"pe_id":"C:0","epoch":1539644788259902,"op":"create","tree":"4000d881-b3e5-458a-857f-dd86e335bdc2","in_use":true,"may_send":true,"parent":0,"mask":"0000000000000001"}
 # routes - JSON : { epoch pe_id op tree in_use may_send parent mask }
@@ -308,7 +334,7 @@ sub do_routes {
 
     unless (defined $url) {
         print($endl, join(' ', 'skipping -', $o->{nickname}, 'pe_id:', $pe_id, 'tree:', $tree), $endl);
-        next;
+        return;
     }
 
     # POST to /port
@@ -336,6 +362,17 @@ sub status_api {
 
     my $port_id = $port_map->[$port - 1]; # adjust index, 0 is cell-agent
     my $url = 'http://'.$ip_endpoint.'/ifconfig/'.$port_id;
+    return $url;
+}
+
+sub hello_api {
+    my ($pe_id, $port) = @_;
+    my $ip_endpoint = $cell_map->{$pe_id};
+    return undef unless defined $ip_endpoint;
+    return undef if $port > @{$port_map};
+
+    my $port_id = $port_map->[$port - 1]; # adjust index, 0 is cell-agent
+    my $url = 'http://'.$ip_endpoint.'/hello/'.$port_id;
     return $url;
 }
 
