@@ -453,6 +453,27 @@ var processCellAgent = (function() {
     };
 })();
 
+// ifconfig-update - JSON : req.body { epoch pe_id uuid port_no is_border status }
+var processIfconfig = (function() {
+    return function(msg) {
+        console.log('ifconfig-update:', machineName, 'body', msg);
+    };
+})();
+
+// hello-update - JSON : req.body { epoch pe_id* recv_port neighbor* xmit_port }
+var processHello = (function() {
+    return function(msg) {
+        console.log('hello-update:', machineName, 'body', msg);
+    };
+})();
+
+// route-update - JSON : req.body { epoch pe_id op tree in_use may_send parent mask }
+var processRoute = (function() {
+    return function(msg) {
+        console.log('route-update:', machineName, 'body', msg);
+    };
+})();
+
 // msg_type(s):
 // Hello - JSON : { nickname guid sector }
 // ECHO - JSON : { tree id seqno }
@@ -508,7 +529,7 @@ function recv(port, msg_type) {
 
 var socket = io();
 
-// earth-update - JSON : { machineName deviceName linkState entlState entlCount AITSent AITRecieved }
+// earth-update - JSON : { machineName deviceName linkState entlState entlCount AITSent AITRecieved recvTime }
 socket.on('earth-update', function(data) {
     data = JSON.parse(data.toString()); // why?
     processPacket(data);
@@ -527,7 +548,20 @@ socket.on('cellagent-update', function(data) {
     processCellAgent(data);
 });
 
-// socket.on('route-update', ...
+// ifconfig-update - JSON : req.body { epoch pe_id uuid port_no is_border status }
+socket.on('ifconfig-update', function(data) {
+    processIfconfig(data);
+});
+
+// hello-update - JSON : req.body { epoch pe_id* recv_port neighbor* xmit_port }
+socket.on('hello-update', function(data) {
+    processHello(data);
+});
+
+// route-update - JSON : req.body { epoch pe_id op tree in_use may_send parent mask }
+socket.on('route-update', function(data) {
+    processRoute(data);
+});
 
 // driver-update - JSON : { port message }
 var sendPacket = function(source, msg) {
