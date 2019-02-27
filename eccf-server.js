@@ -185,13 +185,6 @@ app.post('/route/:tree', function (req, res) {
 app.post('/port/:port_id', function (req, res) {
     var port = req.params.port_id;
 
-    // WHEN not connected : 301 Moved Permanently
-    var body = port_status[port];
-    if (body.status == 'Disconnected') {
-        res.status(301).send({status: 301, message: 'not connected', type: 'transport'});
-        return;
-    }
-
     cellAgentUpdate(req.body);
     // ugh, hack req frame for debug output
     var frame = req.body.frame;
@@ -204,6 +197,13 @@ app.post('/port/:port_id', function (req, res) {
     var host = req.body.pe_id;
     var msg_type = req.body.msg_type;
     if (config.trunc != 0) { console.log('xmit', 'POST', msg_type, 'port:', port, 'hint:', hint(port), 'frame:', frame.substr(config.trunc)); }
+
+    // WHEN not connected : 301 Moved Permanently
+    var body = port_status[port];
+    if (body != undefined && body.status == 'Disconnected') {
+        res.status(301).send({status: 301, message: 'not connected', type: 'transport'});
+        return;
+    }
 
 try {
     // HACK
