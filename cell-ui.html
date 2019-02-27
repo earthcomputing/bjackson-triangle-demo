@@ -502,6 +502,7 @@ function xmit(port, msg_type) {
         var port_line = ''
             + '<br/>' + '<font color="red">xmit:</font> ' + verb
         ;
+    $('#phyLog').scrollTop(100000);
     $('#port'+port).append(port_line);
 }
 
@@ -522,7 +523,8 @@ function recv(port, msg_type) {
         var port_line = ''
             + '<br/>' + '<font color="blue">recv:</font> ' + verb
         ;
-        $('#port'+port).append(port_line);
+    $('#phyLog').scrollTop(100000);
+    $('#port'+port).append(port_line);
 }
 
 // =============================== the real stuff
