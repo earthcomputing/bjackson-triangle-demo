@@ -131,6 +131,8 @@ app.post('/ifconfig/:port_id', function (req, res) {
         '\nbody:', req.body
     );
 
+    // body.status == Disconnected
+
     // if (hostname != req.body.nickname) { error!! }
     port_status[req.body.port_no] = req.body;
     if (config.trunc != 0) { console.log('ifconfig', 'POST', req.body.epoch, 'port:', port, 'hint:', req.body.nickname, 'border:', req.body.is_border, 'status:', req.body.status); }
@@ -182,6 +184,14 @@ app.post('/route/:tree', function (req, res) {
 // /port - JSON : body { ait_code epoch frame msg_id msg_type nickname outbound pe_id tree }
 app.post('/port/:port_id', function (req, res) {
     var port = req.params.port_id;
+
+    // WHEN not connected : 301 Moved Permanently
+    var body = port_status[port];
+    if (body.status == 'Disconnected') {
+        res.status(301).send({status: 301, message: 'not connected', type: 'transport'});
+        return;
+    }
+
     cellAgentUpdate(req.body);
     // ugh, hack req frame for debug output
     var frame = req.body.frame;
