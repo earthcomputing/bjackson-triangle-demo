@@ -198,6 +198,13 @@ app.post('/port/:port_id', function (req, res) {
     var msg_type = req.body.msg_type;
     if (config.trunc != 0) { console.log('xmit', 'POST', msg_type, 'port:', port, 'hint:', hint(port), 'frame:', frame.substr(config.trunc)); }
 
+    // if (hostname != req.body.nickname) { error!! }
+    var linkState = last_state[hostname][port]; // UP/DOWN
+    if (linkState != undefined && linkState == 'DOWN') {
+        res.status(301).send({status: 301, message: 'link down', type: 'transport'});
+        return;
+    }
+
     // WHEN not connected : 301 Moved Permanently
     var body = port_status[port];
     if (body != undefined && body.status == 'Disconnected') {
@@ -375,7 +382,7 @@ var receiveListener = function (data) {
             last_state[obj.machineName][obj.deviceName] = obj.linkState;
 
             // I/O to spinner
-            // if (!connected) continue;
+            if (!connected) continue; // FIXME: nobody listening on socket yet?
 
             // inline rather than earthUpdate()
             io.emit('earth-update', json_txt);
