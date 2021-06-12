@@ -1,5 +1,9 @@
 #!/usr/local/bin/perl -w
 #!/usr/bin/perl -w
+#---------------------------------------------------------------------------------------------
+ #  Copyright © 2016-present Earth Computing Corporation. All rights reserved.
+ #  Licensed under the MIT License. See LICENSE.txt in the project root for license information.
+#---------------------------------------------------------------------------------------------
 # python -mjson.tool
 # replay.pl -config=blueprint-sim.json -delay=1 -status=status.json -hello=hello.json -routes=routes.json -frames=frames-triamgle-1539644788248291.json.gz 
 # synth-ping.pl -config=blueprint-sim.json -machine=Ted -delay=0 -n=5
